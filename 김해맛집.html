@@ -2,9 +2,10 @@
 <html lang="ko" class="scroll-smooth">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, minimum-scale=1.0, user-scalable=yes">
-    <title>김해 맛집 가이드 - AI 실시간 미식 가이드 & 방명록</title>
-    <!-- Tailwind CSS 로드 및 클래스 기반 다크모드 활성화 설정 -->
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>김해 맛집 Top 3 AI 가이드 & 미식 탐험대</title>
+    
+    <!-- Tailwind CSS 로드 -->
     <script src="https://cdn.tailwindcss.com"></script>
     <script>
         tailwind.config = {
@@ -12,971 +13,1712 @@
             theme: {
                 extend: {
                     colors: {
-                        darkBg: '#040815',
-                        darkCard: '#0d1527'
+                        darkBg: '#090d16',
+                        darkPanel: '#111827',
+                        brandBlue: '#3b82f6',
+                        brandPurple: '#a855f7'
+                    },
+                    fontFamily: {
+                        sans: ['Pretendard', '-apple-system', 'BlinkMacSystemFont', 'system-ui', 'Roboto', 'sans-serif'],
                     }
                 }
             }
-        };
+        }
     </script>
-    <!-- FontAwesome 아이콘 라이브러리 로드 -->
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <!-- Pretendard 폰트 로드 -->
-    <link rel="stylesheet" as="style" crossorigin href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.8/dist/web/static/pretendard.css" />
     
+    <!-- 프리미엄 폰트 및 아이콘 라이브러리 CDN -->
+    <link rel="stylesheet" as="style" crossorigin href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
     <style>
         body {
-            font-family: 'Pretendard', -apple-system, BlinkMacSystemFont, system-ui, Roboto, sans-serif;
-            overflow-x: hidden;
+            font-family: 'Pretendard', sans-serif;
             -webkit-tap-highlight-color: transparent;
         }
-        .text-gradient {
-            background: linear-gradient(135deg, #1d4ed8 0%, #3b82f6 100%);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-        }
-        .dark .text-gradient {
-            background: linear-gradient(135deg, #60a5fa 0%, #a5f3fc 100%);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-        }
-        /* 파티클이 훤히 비치도록 초투명 글래스모피즘 스타일 정의 */
+        /* 글래스모피즘 기본 스타일링 */
         .glass-panel {
-            background: rgba(255, 255, 255, 0.25);
-            backdrop-filter: blur(16px);
-            -webkit-backdrop-filter: blur(16px);
+            background: rgba(255, 255, 255, 0.45);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
             border: 1px solid rgba(255, 255, 255, 0.4);
         }
         .dark .glass-panel {
-            background: rgba(13, 21, 39, 0.35);
-            backdrop-filter: blur(16px);
-            -webkit-backdrop-filter: blur(16px);
-            border: 1px solid rgba(255, 255, 255, 0.08);
+            background: rgba(17, 24, 39, 0.45);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 0.05);
         }
-        .no-scrollbar::-webkit-scrollbar {
-            display: none;
-        }
-        .no-scrollbar {
-            -ms-overflow-style: none;
-            scrollbar-width: none;
-        }
-        /* AI 메시지 서식용 스타일 */
-        .ai-markdown-content p {
-            margin-bottom: 0.75rem;
-            line-height: 1.6;
-        }
-        .ai-markdown-content strong {
-            color: #1e3a8a;
-            font-weight: 700;
-        }
-        .dark .ai-markdown-content strong {
-            color: #60a5fa;
-        }
-        .ai-markdown-content ul {
-            list-style-type: disc;
-            margin-left: 1.25rem;
-            margin-bottom: 0.75rem;
-        }
-        .ai-markdown-content li {
-            margin-bottom: 0.25rem;
+        /* 파티클 캔버스 레이아웃 고정 */
+        #particle-canvas {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 1;
+            pointer-events: none;
         }
     </style>
 </head>
-<body class="bg-slate-100 text-slate-800 dark:bg-darkBg dark:text-slate-100 antialiased selection:bg-blue-500 selection:text-white w-full overflow-x-hidden transition-colors duration-500">
+<body class="bg-slate-50 text-slate-800 dark:bg-darkBg dark:text-slate-100 transition-colors duration-300 min-h-screen relative overflow-x-hidden">
 
-    <!-- 배경 파티클 캔버스 (클릭 통과, 화면 고정, z-index 0으로 꽉 채움) -->
-    <canvas id="particle-canvas" class="fixed inset-0 pointer-events-none z-0"></canvas>
+    <!-- 백그라운드 인터랙티브 애니메이션 캔버스 -->
+    <canvas id="particle-canvas"></canvas>
 
-    <!-- 네비게이션 영역 (파티클 비침을 위해 투명화 처리) -->
-    <nav class="sticky top-0 z-50 bg-white/30 dark:bg-darkBg/30 backdrop-blur-xl border-b border-white/20 dark:border-white/5 transition-all duration-300 w-full">
-        <div class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div class="flex items-center justify-between h-16 sm:h-20">
-                <!-- 로고 영역 -->
-                <div class="flex items-center gap-2">
-                    <span class="text-2xl sm:text-3xl">✈️</span>
-                    <span class="font-black text-lg sm:text-2xl tracking-tight text-slate-900 dark:text-white">
-                        김해<span class="text-blue-600 dark:text-blue-400">미식가이드 AI</span>
-                    </span>
-                </div>
-                
-                <!-- 데스크톱 전용 메뉴 -->
-                <div class="hidden md:flex items-center space-x-8 font-bold text-sm lg:text-base">
-                    <a href="#welcome" class="text-slate-700 dark:text-slate-300 hover:text-blue-600 dark:hover:text-blue-400 transition-colors">홈</a>
-                    <a href="#selector" class="text-slate-700 dark:text-slate-300 hover:text-blue-600 dark:hover:text-blue-400 transition-colors">AI 추천 & 퀴즈</a>
-                    <a href="#restaurants" class="text-slate-700 dark:text-slate-300 hover:text-blue-600 dark:hover:text-blue-400 transition-colors">추천 맛집 Top 3</a>
-                    <a href="#guestbook" class="text-slate-700 dark:text-slate-300 hover:text-blue-600 dark:hover:text-blue-400 transition-colors">방명록</a>
-                    <a href="#tips" class="text-slate-700 dark:text-slate-300 hover:text-blue-600 dark:hover:text-blue-400 transition-colors">방문 꿀팁</a>
-                </div>
-                
-                <!-- 우측 제어 및 모바일 버튼 -->
-                <div class="flex items-center gap-2">
-                    <a href="#selector" class="hidden sm:inline-flex bg-blue-600 hover:bg-blue-700 active:scale-95 text-white font-black py-2.5 px-5 rounded-2xl text-sm transition-all duration-200 shadow-lg shadow-blue-500/20">
-                        AI 매칭 받기
-                    </a>
-                    
-                    <!-- 모바일 햄버거 버튼 -->
-                    <button id="mobile-menu-btn" onclick="toggleMobileMenu()" class="md:hidden flex items-center justify-center p-2.5 rounded-xl bg-white/50 dark:bg-slate-800/50 hover:bg-white/80 dark:hover:bg-slate-700/80 active:scale-90 text-slate-700 dark:text-slate-300 transition-all focus:outline-none" aria-label="메뉴 열기">
-                        <i id="menu-icon" class="fa-solid fa-bars text-xl"></i>
-                    </button>
-                </div>
-            </div>
-        </div>
+    <!-- 스크롤 진행률 게이지 바 (화면 최상단 고정) -->
+    <div class="fixed top-0 left-0 w-full h-1.5 bg-slate-200 dark:bg-slate-800 z-50">
+        <div id="scroll-indicator" class="h-full bg-gradient-to-r from-blue-500 via-indigo-500 to-purple-500 w-0 transition-all duration-75"></div>
+    </div>
 
-        <!-- 모바일 드롭다운 메뉴 -->
-        <div id="mobile-menu" class="hidden md:hidden border-t border-white/20 dark:border-white/5 bg-white/70 dark:bg-darkBg/70 backdrop-blur-2xl shadow-xl transition-colors duration-300">
-            <div class="px-4 py-4 space-y-2 font-bold">
-                <a href="#welcome" onclick="closeMobileMenu()" class="block py-3 px-4 rounded-xl hover:bg-white/50 dark:hover:bg-slate-800/50 text-slate-700 dark:text-slate-300 active:bg-blue-50 active:text-blue-600 transition-all"><i class="fa-solid fa-house mr-2.5 text-slate-400"></i>홈</a>
-                <a href="#selector" onclick="closeMobileMenu()" class="block py-3 px-4 rounded-xl hover:bg-white/50 dark:hover:bg-slate-800/50 text-slate-700 dark:text-slate-300 active:bg-blue-50 active:text-blue-600 transition-all"><i class="fa-solid fa-wand-magic-sparkles mr-2.5 text-slate-400"></i>AI 추천 & 퀴즈</a>
-                <a href="#restaurants" onclick="closeMobileMenu()" class="block py-3 px-4 rounded-xl hover:bg-white/50 dark:hover:bg-slate-800/50 text-slate-700 dark:text-slate-300 active:bg-blue-50 active:text-blue-600 transition-all"><i class="fa-solid fa-star mr-2.5 text-slate-400"></i>추천 맛집 Top 3</a>
-                <a href="#guestbook" onclick="closeMobileMenu()" class="block py-3 px-4 rounded-xl hover:bg-white/50 dark:hover:bg-slate-800/50 text-slate-700 dark:text-slate-300 active:bg-blue-50 active:text-blue-600 transition-all"><i class="fa-solid fa-comments mr-2.5 text-slate-400"></i>실시간 방명록</a>
-                <a href="#tips" onclick="closeMobileMenu()" class="block py-3 px-4 rounded-xl hover:bg-white/50 dark:hover:bg-slate-800/50 text-slate-700 dark:text-slate-300 active:bg-blue-50 active:text-blue-600 transition-all"><i class="fa-solid fa-circle-info mr-2.5 text-slate-400"></i>방문 꿀팁</a>
-                <div class="pt-3 border-t border-white/20 dark:border-white/5">
-                    <a href="#selector" onclick="closeMobileMenu()" class="w-full inline-flex items-center justify-center gap-2 bg-blue-600 active:scale-95 text-white font-black py-3.5 px-4 rounded-2xl text-center shadow-lg transition-all text-sm">
-                        🤖 AI 로컬 컨시어지 시작하기
-                    </a>
-                </div>
-            </div>
-        </div>
-    </nav>
-
-    <!-- 헤더 / 히어로 섹션 -->
-    <header id="welcome" class="relative overflow-hidden py-16 sm:py-28 w-full transition-colors duration-300 z-10">
-        <div class="relative max-w-4xl mx-auto px-4 sm:px-6 text-center">
+    <!-- 글로벌 헤더 영역 -->
+    <header class="sticky top-0 z-40 w-full glass-panel border-b transition-colors duration-300">
+        <div class="max-w-6xl mx-auto px-4 h-16 flex items-center justify-between">
             
-            <!-- 다크/라이트모드 토글 버튼 (완벽 연동) -->
-            <div class="flex justify-start mb-8 -mt-4">
-                <button id="theme-toggle" onclick="toggleTheme()" class="inline-flex items-center gap-2.5 px-4 py-2.5 rounded-2xl bg-white/50 dark:bg-slate-800/50 text-slate-800 dark:text-slate-200 border border-white/40 dark:border-white/10 shadow-lg hover:border-blue-400 dark:hover:border-blue-500 active:scale-95 transition-all duration-200 text-xs sm:text-sm font-black backdrop-blur-md">
-                    <span id="theme-icon">🌙</span>
-                    <span id="theme-text">다크 모드</span>
+            <!-- 좌측: 다크/라이트 모드 스위치 버튼 (요청하신 지정 위치) -->
+            <button onclick="toggleTheme()" id="theme-toggle-btn" class="flex items-center gap-2 px-3 py-1.5 rounded-full bg-white/60 dark:bg-slate-900/60 border border-slate-200 dark:border-slate-800 active:scale-95 transition-all shadow-sm z-50">
+                <span class="w-7 h-7 rounded-full bg-amber-100 dark:bg-slate-800 flex items-center justify-center text-amber-500 dark:text-blue-400 transition-transform duration-300">
+                    <i id="theme-icon" class="fa-solid fa-sun"></i>
+                </span>
+                <span id="theme-text" class="text-xs font-black text-slate-700 dark:text-slate-300 hidden sm:inline">라이트 모드</span>
+            </button>
+
+            <!-- 중앙 로고 (타지 방문객 가이드 타이틀) -->
+            <a href="#" class="flex items-center gap-1.5 select-none">
+                <span class="text-lg sm:text-xl font-black tracking-tight bg-gradient-to-r from-blue-600 to-purple-600 dark:from-blue-400 dark:to-purple-400 bg-clip-text text-transparent">
+                    김해 가이드 ✈️
+                </span>
+            </a>
+
+            <!-- 우측: 네비게이션 메뉴 및 모바일 햄버거 -->
+            <div class="flex items-center gap-3">
+                <!-- 데스크톱용 메뉴 링크 -->
+                <nav class="hidden md:flex items-center space-x-6 font-bold text-sm">
+                    <a href="#welcome" class="text-slate-700 dark:text-slate-300 hover:text-blue-600 dark:hover:text-blue-400 transition-colors">홈</a>
+                    <a href="#quest" class="text-slate-700 dark:text-slate-300 hover:text-blue-600 dark:hover:text-blue-400 transition-colors">미식 퀘스트</a>
+                    <a href="#selector" class="text-slate-700 dark:text-slate-300 hover:text-blue-600 dark:hover:text-blue-400 transition-colors">AI 컨시어지</a>
+                    <a href="#restaurants" class="text-slate-700 dark:text-slate-300 hover:text-blue-600 dark:hover:text-blue-400 transition-colors">추천 맛집</a>
+                    <a href="#guestbook" class="text-slate-700 dark:text-slate-300 hover:text-blue-600 dark:hover:text-blue-400 transition-colors">실시간 방명록</a>
+                </nav>
+
+                <!-- 모바일 햄버거 토글 버튼 -->
+                <button onclick="toggleMobileMenu()" class="md:hidden p-2 text-slate-700 dark:text-slate-300 focus:outline-none" aria-label="메뉴 토글">
+                    <i id="menu-icon" class="fa-solid fa-bars text-xl"></i>
                 </button>
             </div>
+        </div>
 
-            <span class="inline-flex items-center gap-1.5 px-4 py-2 rounded-full text-xs font-black bg-blue-100/50 text-blue-900 dark:bg-blue-950/40 dark:text-blue-300 mb-6 shadow-sm border border-white/40 dark:border-white/5 backdrop-blur-md">
-                🤖 실시간 맛집 매칭 + AI가 설계하는 똑똑한 동선 가이드
-            </span>
-            <h1 class="text-3xl sm:text-5xl lg:text-6xl font-black tracking-tight text-slate-900 dark:text-white leading-tight mb-5 sm:mb-8 transition-colors duration-300">
-                낯선 김해에서<br class="sm:hidden">
-                <span class="text-gradient">실패하지 않을 맞춤 미식 가이드</span>
-            </h1>
-            <p class="text-sm sm:text-lg lg:text-xl text-slate-700 dark:text-slate-300 leading-relaxed max-w-2xl mx-auto mb-8 sm:mb-12 transition-colors duration-300 font-medium">
-                "김해 공항 가기 전 든든한 한 끼는 어디?", "가장 쾌적하고 깔끔한 식당은?"<br class="hidden sm:block">
-                현지인 보증 맛집 Top 3를 기반으로 AI가 설계해 주는 환상의 식사 동선을 만나보세요.
-            </p>
-            <div class="flex flex-col sm:flex-row justify-center gap-4 px-4 max-w-md sm:max-w-none mx-auto">
-                <a href="#selector" class="inline-flex items-center justify-center gap-2 bg-blue-600 hover:bg-blue-700 active:scale-95 text-white font-black py-4 px-8 rounded-2xl shadow-xl shadow-blue-500/20 transition-all text-sm sm:text-base">
-                    🤖 AI 맞춤 코스 짜기 <i class="fa-solid fa-wand-magic-sparkles text-xs sm:text-sm"></i>
-                </a>
-                <a href="#restaurants" class="inline-flex items-center justify-center gap-2 bg-white/40 dark:bg-slate-800/40 hover:bg-white/60 dark:hover:bg-slate-700/60 active:scale-95 text-slate-900 dark:text-slate-100 font-black py-4 px-8 rounded-2xl shadow-md border border-white/40 dark:border-white/10 transition-all text-sm sm:text-base backdrop-blur-md">
-                    💡 보증 맛집 Top 3 직접보기
-                </a>
+        <!-- 모바일 드롭다운 아코디언 메뉴 -->
+        <div id="mobile-menu" class="hidden md:hidden border-t border-slate-200 dark:border-slate-800 bg-white/95 dark:bg-slate-950/95 backdrop-blur-md transition-all duration-300">
+            <div class="px-4 py-4 space-y-3 font-bold text-sm">
+                <a href="#welcome" onclick="closeMobileMenu()" class="block py-2 px-3 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800/50"><i class="fa-solid fa-house mr-2 text-slate-400"></i>홈</a>
+                <a href="#quest" onclick="closeMobileMenu()" class="block py-2 px-3 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800/50"><i class="fa-solid fa-gamepad mr-2 text-slate-400"></i>미식 퀘스트</a>
+                <a href="#selector" onclick="closeMobileMenu()" class="block py-2 px-3 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800/50"><i class="fa-solid fa-wand-magic-sparkles mr-2 text-slate-400"></i>AI 컨시어지 & 엽서</a>
+                <a href="#restaurants" onclick="closeMobileMenu()" class="block py-2 px-3 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800/50"><i class="fa-solid fa-utensils mr-2 text-slate-400"></i>추천 맛집 Top 3</a>
+                <a href="#guestbook" onclick="closeMobileMenu()" class="block py-2 px-3 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800/50"><i class="fa-solid fa-comments mr-2 text-slate-400"></i>실시간 방명록</a>
             </div>
         </div>
     </header>
 
-    <!-- AI 컨시어지 및 기분 맞춤 퀴즈 섹션 (초투명 유리 질감 적용) -->
-    <section id="selector" class="py-12 sm:py-20 max-w-4xl mx-auto px-4 w-full relative z-10">
-        <div class="glass-panel rounded-3xl shadow-2xl relative overflow-hidden transition-all duration-500">
-            <div class="absolute top-0 right-0 w-48 h-48 bg-blue-500/10 rounded-full blur-3xl -z-10"></div>
-            
-            <!-- 탭 헤더 -->
-            <div class="flex border-b border-white/20 dark:border-white/5 bg-white/10 dark:bg-slate-900/10 transition-colors duration-300">
-                <button id="tab-ai" onclick="switchSelectorTab('ai')" class="flex-1 py-5 text-center font-black text-sm sm:text-base border-b-2 border-blue-600 dark:border-blue-400 text-blue-600 dark:text-blue-400 transition-all flex items-center justify-center gap-2">
-                    <i class="fa-solid fa-brain"></i> AI 미식 컨시어지
-                </button>
-                <button id="tab-quiz" onclick="switchSelectorTab('quiz')" class="flex-1 py-5 text-center font-black text-sm sm:text-base border-b-2 border-transparent text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200 transition-all flex items-center justify-center gap-2">
-                    <i class="fa-solid fa-list-check"></i> 3초 기분 맞춤 퀴즈
-                </button>
+    <!-- 메인 컨텐츠 영역 -->
+    <main class="relative z-10 max-w-5xl mx-auto px-4 pb-24">
+
+        <!-- 웰컴 및 히어로 배너 섹션 -->
+        <section id="welcome" class="pt-12 pb-10 text-center space-y-4">
+            <div class="inline-flex items-center gap-1.5 bg-blue-100/60 dark:bg-blue-950/40 border border-blue-200/50 dark:border-blue-900/30 text-blue-700 dark:text-blue-300 px-4 py-1.5 rounded-full text-xs font-black">
+                <i class="fa-solid fa-location-dot"></i> 타지 방문객을 위한 김해 미식 바이블
             </div>
+            <h1 class="text-3xl sm:text-5xl font-extrabold tracking-tight text-slate-900 dark:text-white leading-tight">
+                김해의 진짜 맛을 만나다,<br>
+                <span class="bg-gradient-to-r from-blue-600 via-indigo-500 to-purple-600 dark:from-blue-400 dark:via-indigo-400 dark:to-purple-400 bg-clip-text text-transparent">대표 맛집 3대 천왕 👑</span>
+            </h1>
+            <p class="text-sm sm:text-base text-slate-600 dark:text-slate-400 max-w-xl mx-auto leading-relaxed font-semibold">
+                김해공항 이용 전후, 경전철 여행지 탐색, 혹은 비즈니스로 김해를 찾은 모든 타지 방문객들을 위해 현지인이 인증한 핵심 맛집 3곳만 골라 가이드해 드립니다.
+            </p>
+        </section>
 
-            <!-- 탭 내용 1: AI 실시간 미식 컨시어지 -->
-            <div id="panel-ai" class="p-5 sm:p-10 space-y-6">
-                <div class="text-center max-w-xl mx-auto mb-6">
-                    <span class="text-xs font-black text-blue-600 dark:text-blue-400 uppercase tracking-widest bg-blue-100/40 dark:bg-blue-950/40 px-3 py-1 rounded-md transition-colors duration-300 border border-blue-500/10">Gemini AI Grounded</span>
-                    <h3 class="text-xl sm:text-3xl font-black text-slate-900 dark:text-white mt-3 transition-colors duration-300">무엇이든 물어보세요!</h3>
-                    <p class="text-xs sm:text-sm text-slate-600 dark:text-slate-400 mt-2 leading-relaxed transition-colors duration-300 font-medium">김해의 3대 추천 맛집 정보를 기반으로 동반자, 타임스케줄, 원하시는 기분에 어울리는 완벽한 디저트 연계 코스를 가이드해 드립니다.</p>
-                </div>
-
-                <!-- 퀵 원터치 질문 버튼 세트 -->
-                <div class="flex flex-wrap gap-2 justify-center">
-                    <button onclick="fillAIQuery('✈️ 김해공항 이용 전, 든든하고 빠르게 한 끼 해결할 수 있는 식사 동선을 짜줘!')" class="bg-white/40 hover:bg-blue-50 hover:text-blue-700 dark:bg-slate-800/30 dark:hover:bg-blue-950/30 dark:text-slate-300 dark:hover:text-blue-300 active:scale-95 text-xs font-black text-slate-700 px-4 py-2.5 rounded-xl transition-all border border-white/50 dark:border-white/5 backdrop-blur-md">
-                        ✈️ 공항 가기 전 스케줄 추천
-                    </button>
-                    <button onclick="fillAIQuery('👨‍👩‍👧‍👦 어린 아이들과 함께 방문해서 편안하게 식사하기 좋은 장소와 주변 추천지는?')" class="bg-white/40 hover:bg-blue-50 hover:text-blue-700 dark:bg-slate-800/30 dark:hover:bg-blue-950/30 dark:text-slate-300 dark:hover:text-blue-300 active:scale-95 text-xs font-black text-slate-700 px-4 py-2.5 rounded-xl transition-all border border-white/50 dark:border-white/5 backdrop-blur-md">
-                        👨‍👩‍👧‍👦 아이 동반 추천 장소
-                    </button>
-                    <button onclick="fillAIQuery('☕ 매콤한 춘천명물닭갈비를 먹고 나서 가기 좋은 트렌디한 감성 카페나 산책 코스 좀 알려줘!')" class="bg-white/40 hover:bg-blue-50 hover:text-blue-700 dark:bg-slate-800/30 dark:hover:bg-blue-950/30 dark:text-slate-300 dark:hover:text-blue-300 active:scale-95 text-xs font-black text-slate-700 px-4 py-2.5 rounded-xl transition-all border border-white/50 dark:border-white/5 backdrop-blur-md">
-                        ☕ 식후 추천 감성 카페
-                    </button>
-                    <button onclick="fillAIQuery('🍲 뜨끈한 국밥을 든든하게 한 그릇 먹고 수로왕릉 주변을 걸을 수 있는 힐링 반나절 동선!')" class="bg-white/40 hover:bg-blue-50 hover:text-blue-700 dark:bg-slate-800/30 dark:hover:bg-blue-950/30 dark:text-slate-300 dark:hover:text-blue-300 active:scale-95 text-xs font-black text-slate-700 px-4 py-2.5 rounded-xl transition-all border border-white/50 dark:border-white/5 backdrop-blur-md">
-                        🍲 국밥 + 문화재 힐링 루트
-                    </button>
-                </div>
-
-                <!-- 실시간 답변 창 -->
-                <div class="bg-white/30 dark:bg-slate-950/30 backdrop-blur-md rounded-2xl border border-white/40 dark:border-white/5 p-5 min-h-[180px] max-h-[400px] overflow-y-auto flex flex-col justify-between transition-colors duration-300" id="ai-response-box">
-                    <div id="ai-response-placeholder" class="text-slate-400 dark:text-slate-500 text-sm text-center py-12">
-                        <i class="fa-solid fa-robot text-4xl mb-3 text-blue-500/60 dark:text-blue-400/60 animate-bounce"></i>
-                        <p class="font-black text-slate-700 dark:text-slate-300 text-base">위의 질문을 터치하거나 아래에 직접 검색해 보세요!</p>
-                        <p class="text-xs text-slate-500 dark:text-slate-400 mt-1.5 font-medium">예: "비 오는 날 어울리는 칼칼한 분위기 코스는?"</p>
+        <!-- 게이미피케이션 대시보드 섹션 -->
+        <section id="quest" class="py-6">
+            <div class="glass-panel rounded-2xl p-5 sm:p-7 shadow-xl">
+                <!-- 헤더 정보 -->
+                <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-200/60 dark:border-slate-800/60 pb-5">
+                    <div>
+                        <h2 class="text-lg sm:text-xl font-extrabold text-slate-900 dark:text-white flex items-center gap-2">
+                            <i class="fa-solid fa-medal text-amber-500"></i> 미식 탐험대 멤버십
+                        </h2>
+                        <p class="text-xs text-slate-500 dark:text-slate-400 mt-1 font-bold">가이드를 탐색하고 다양한 미션을 해결하여 등급을 올리세요!</p>
                     </div>
-                    <div id="ai-response-content" class="hidden text-slate-800 dark:text-slate-200 text-sm leading-relaxed text-left space-y-3 ai-markdown-content transition-colors duration-300">
-                        <!-- 동적 렌더링 -->
+                    <!-- 실시간 랭킹 및 등급 표시 컴포넌트 -->
+                    <div class="flex items-center gap-3 bg-white/50 dark:bg-slate-900/50 px-4 py-2.5 rounded-xl border border-slate-200/50 dark:border-slate-800/50">
+                        <span id="tier-badge" class="text-3xl select-none">🥉</span>
+                        <div>
+                            <span id="tier-title" class="block text-xs font-black text-slate-900 dark:text-white">새내기 미식가 🥉 (Bronze)</span>
+                            <span class="block text-[10px] text-slate-400 font-bold" id="tier-percent-badge">상위 90%</span>
+                        </div>
                     </div>
                 </div>
 
-                <!-- 질문 인풋 영역 -->
-                <div class="flex flex-col sm:flex-row gap-2">
-                    <input type="text" id="ai-query-input" placeholder="김해 여행 동선이나 맛집 연계 명소를 물어보세요..." class="flex-1 px-4 py-4 rounded-2xl bg-white/50 dark:bg-slate-950/50 text-slate-850 dark:text-slate-100 border border-white/40 dark:border-white/10 focus:bg-white dark:focus:bg-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm transition-all shadow-inner font-bold">
-                    <button id="ai-submit-btn" onclick="sendQueryToAI()" class="bg-blue-600 hover:bg-blue-700 active:scale-95 text-white font-black px-6 py-4 rounded-2xl transition-all flex items-center justify-center gap-1.5 text-sm shadow-lg shadow-blue-500/20">
-                        <span id="btn-text">질문하기</span> <i class="fa-solid fa-paper-plane"></i>
-                    </button>
-                </div>
-            </div>
+                <!-- 프로그레스 게이지 및 미션 현황 -->
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-6 pt-5 items-center">
+                    <!-- 포인트 진행도 -->
+                    <div class="md:col-span-2 space-y-2">
+                        <div class="flex justify-between text-xs font-black">
+                            <span>보유 미식 포인트 (XP)</span>
+                            <span><span id="current-xp" class="text-blue-500 text-sm">0</span> XP</span>
+                        </div>
+                        <div class="w-full h-3 bg-slate-200 dark:bg-slate-800 rounded-full overflow-hidden">
+                            <div id="tier-progress-bar" class="h-full bg-gradient-to-r from-blue-500 to-indigo-500 w-0 transition-all duration-500 rounded-full"></div>
+                        </div>
+                        <div class="flex justify-between text-[10px] text-slate-400 font-black">
+                            <span>0 XP</span>
+                            <span id="growth-percent-text">0% 완료</span>
+                            <span>200 XP (MAX)</span>
+                        </div>
+                    </div>
 
-            <!-- 탭 내용 2: 3초 기분 맞춤 퀴즈 -->
-            <div id="panel-quiz" class="hidden p-5 sm:p-10">
-                <div class="text-center mb-6 sm:mb-10">
-                    <span class="text-xs font-black text-blue-600 dark:text-blue-400 uppercase tracking-widest bg-blue-100/40 dark:bg-blue-950/40 px-3 py-1 rounded-md transition-colors duration-300 border border-blue-500/10">Quick Matcher</span>
-                    <h3 class="text-2xl sm:text-3xl font-black text-slate-900 dark:text-white mt-3 transition-colors duration-300">지금 가장 끌리는 맛은?</h3>
-                    <p class="text-slate-600 dark:text-slate-400 mt-2 text-xs sm:text-sm leading-relaxed font-medium transition-colors duration-300">취향을 가볍게 한 번 터치하면 최적의 점포를 콕 짚어 추천합니다.</p>
-                </div>
-
-                <!-- 질문 카드 -->
-                <div id="quiz-question-container" class="space-y-4 sm:space-y-6">
-                    <h4 class="text-base sm:text-lg font-black text-slate-800 dark:text-slate-200 text-center"><i class="fa-regular fa-lightbulb text-amber-500 mr-1.5"></i> 끌리는 한 가지 스타일을 선택해 보세요</h4>
-                    <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                        <button onclick="selectQuizOption('soup-heavy')" class="flex flex-row sm:flex-col items-center justify-start sm:justify-center p-5 sm:p-7 bg-white/40 dark:bg-slate-950/40 backdrop-blur-md active:scale-95 hover:bg-white/60 dark:hover:bg-slate-800/40 border-2 border-white/50 dark:border-white/5 rounded-2xl transition-all duration-200 text-left sm:text-center group">
-                            <span class="text-3xl sm:text-4xl mr-4 sm:mr-0 sm:mb-3 transition-transform group-hover:scale-110">🍲</span>
-                            <div>
-                                <span class="font-black text-slate-900 dark:text-white block text-sm sm:text-base">깊고 든든한 국물</span>
-                                <span class="text-xs text-slate-500 dark:text-slate-400 mt-1 block font-semibold">깔끔하고 정갈한 사골 육수</span>
-                            </div>
-                        </button>
-                        <button onclick="selectQuizOption('clean-warm')" class="flex flex-row sm:flex-col items-center justify-start sm:justify-center p-5 sm:p-7 bg-white/40 dark:bg-slate-950/40 backdrop-blur-md active:scale-95 hover:bg-white/60 dark:hover:bg-slate-800/40 border-2 border-white/50 dark:border-white/5 rounded-2xl transition-all duration-200 text-left sm:text-center group">
-                            <span class="text-3xl sm:text-4xl mr-4 sm:mr-0 sm:mb-3 transition-transform group-hover:scale-110">🥣</span>
-                            <div>
-                                <span class="font-black text-slate-900 dark:text-white block text-sm sm:text-base">담백 정전의 순대</span>
-                                <span class="text-xs text-slate-500 dark:text-slate-400 mt-1 block font-semibold">전통 가마솥 토종 국밥</span>
-                            </div>
-                        </button>
-                        <button onclick="selectQuizOption('spicy-energy')" class="flex flex-row sm:flex-col items-center justify-start sm:justify-center p-5 sm:p-7 bg-white/40 dark:bg-slate-950/40 backdrop-blur-md active:scale-95 hover:bg-white/60 dark:hover:bg-slate-800/40 border-2 border-white/50 dark:border-white/5 rounded-2xl transition-all duration-200 text-left sm:text-center group">
-                            <span class="text-3xl sm:text-4xl mr-4 sm:mr-0 sm:mb-3 transition-transform group-hover:scale-110">🔥</span>
-                            <div>
-                                <span class="font-black text-slate-900 dark:text-white block text-sm sm:text-base">활력 넘치는 매콤함</span>
-                                <span class="text-xs text-slate-500 dark:text-slate-400 mt-1 block font-semibold">입맛 돋우는 철판 닭갈비</span>
-                            </div>
-                        </button>
+                    <!-- 미션 클리어 현황 요약 -->
+                    <div class="bg-white/40 dark:bg-slate-900/40 p-4 rounded-xl border border-white/50 dark:border-slate-800/20 text-center">
+                        <span class="block text-[10px] text-slate-400 font-black uppercase tracking-wider">미션 성공 개수</span>
+                        <span id="quest-count" class="block text-2xl font-black text-indigo-600 dark:text-indigo-400 mt-1">0 / 8</span>
+                        <span id="reward-status" class="block text-[10px] text-amber-500 font-bold mt-1">대기 중</span>
                     </div>
                 </div>
 
-                <!-- 결과 카드 (처음에는 숨김) -->
-                <div id="quiz-result-container" class="hidden text-center space-y-5 py-2">
-                    <div class="inline-flex items-center justify-center w-14 h-14 sm:h-16 sm:w-16 rounded-full bg-blue-100 dark:bg-blue-950/80 text-blue-600 dark:text-blue-400 text-2xl sm:text-3xl mb-1 shadow-md animate-bounce">🎉</div>
-                    <h3 class="text-lg sm:text-xl font-black text-slate-900 dark:text-white transition-colors duration-300">귀하의 오늘의 김해 추천 맛집!</h3>
+                <!-- 실시간 탐험대 미션 아코디언 보드 -->
+                <div class="mt-5 pt-4 border-t border-slate-200/60 dark:border-slate-800/60">
+                    <button onclick="toggleQuestBoard()" class="flex items-center justify-between w-full text-left text-xs font-black text-slate-700 dark:text-slate-300 hover:text-blue-600 dark:hover:text-blue-400 transition-colors">
+                        <span class="flex items-center gap-1.5"><i class="fa-solid fa-circle-check text-emerald-500"></i> 실시간 탐험대 8대 퀘스트 (XP 보상 지급)</span>
+                        <i id="quest-chevron" class="fa-solid fa-chevron-down transition-transform duration-200"></i>
+                    </button>
                     
-                    <div id="quiz-result-card" class="max-w-sm sm:max-w-md mx-auto p-5 sm:p-6 bg-white/50 dark:bg-slate-950/50 backdrop-blur-md rounded-2xl border border-white/40 dark:border-white/10 shadow-lg text-slate-800 dark:text-slate-200 font-semibold">
-                        <!-- 스크립트에서 동적 주입 -->
+                    <div id="quest-board-list" class="hidden mt-3 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2.5 pt-1">
+                        <!-- 미션 1 -->
+                        <div class="flex items-center gap-2.5 p-2.5 rounded-xl bg-white/40 dark:bg-slate-900/40 border border-white/40 dark:border-white/5">
+                            <div id="q1-chk" class="w-5 h-5 rounded-md border border-slate-400 dark:border-slate-600 flex items-center justify-center text-xs shrink-0 bg-white/50 dark:bg-slate-800"><i class="fa-solid fa-check text-slate-300 dark:text-slate-650"></i></div>
+                            <div class="min-w-0">
+                                <p class="font-bold text-xs text-slate-800 dark:text-slate-200 truncate">1. 3초 취향 퀴즈 완료</p>
+                                <p class="text-[10px] text-slate-400 font-semibold">+25 XP 지급</p>
+                            </div>
+                        </div>
+                        <!-- 미션 2 -->
+                        <div class="flex items-center gap-2.5 p-2.5 rounded-xl bg-white/40 dark:bg-slate-900/40 border border-white/40 dark:border-white/5">
+                            <div id="q2-chk" class="w-5 h-5 rounded-md border border-slate-400 dark:border-slate-600 flex items-center justify-center text-xs shrink-0 bg-white/50 dark:bg-slate-800"><i class="fa-solid fa-check text-slate-300 dark:text-slate-650"></i></div>
+                            <div class="min-w-0">
+                                <p class="font-bold text-xs text-slate-800 dark:text-slate-200 truncate">2. 대표 주소 복사하기</p>
+                                <p class="text-[10px] text-slate-400 font-semibold">+15 XP 지급</p>
+                            </div>
+                        </div>
+                        <!-- 미션 3 -->
+                        <div class="flex items-center gap-2.5 p-2.5 rounded-xl bg-white/40 dark:bg-slate-900/40 border border-white/40 dark:border-white/5">
+                            <div id="q3-chk" class="w-5 h-5 rounded-md border border-slate-400 dark:border-slate-600 flex items-center justify-center text-xs shrink-0 bg-white/50 dark:bg-slate-800"><i class="fa-solid fa-check text-slate-300 dark:text-slate-650"></i></div>
+                            <div class="min-w-0">
+                                <p class="font-bold text-xs text-slate-800 dark:text-slate-200 truncate">3. 외부 네이버 지도 열기</p>
+                                <p class="text-[10px] text-slate-400 font-semibold">+20 XP 지급</p>
+                            </div>
+                        </div>
+                        <!-- 미션 4 -->
+                        <div class="flex items-center gap-2.5 p-2.5 rounded-xl bg-white/40 dark:bg-slate-900/40 border border-white/40 dark:border-white/5">
+                            <div id="q4-chk" class="w-5 h-5 rounded-md border border-slate-400 dark:border-slate-600 flex items-center justify-center text-xs shrink-0 bg-white/50 dark:bg-slate-800"><i class="fa-solid fa-check text-slate-300 dark:text-slate-650"></i></div>
+                            <div class="min-w-0">
+                                <p class="font-bold text-xs text-slate-800 dark:text-slate-200 truncate">4. AI 컨시어지 질문 1회</p>
+                                <p class="text-[10px] text-slate-400 font-semibold">+25 XP 지급</p>
+                            </div>
+                        </div>
+                        <!-- 미션 5 -->
+                        <div class="flex items-center gap-2.5 p-2.5 rounded-xl bg-white/40 dark:bg-slate-900/40 border border-white/40 dark:border-white/5">
+                            <div id="q5-chk" class="w-5 h-5 rounded-md border border-slate-400 dark:border-slate-600 flex items-center justify-center text-xs shrink-0 bg-white/50 dark:bg-slate-800"><i class="fa-solid fa-check text-slate-300 dark:text-slate-650"></i></div>
+                            <div class="min-w-0">
+                                <p class="font-bold text-xs text-slate-800 dark:text-slate-200 truncate">5. 실시간 방명록 한줄평 쓰기</p>
+                                <p class="text-[10px] text-slate-400 font-semibold">+35 XP 지급</p>
+                            </div>
+                        </div>
+                        <!-- 미션 6 -->
+                        <div class="flex items-center gap-2.5 p-2.5 rounded-xl bg-white/40 dark:bg-slate-900/40 border border-white/40 dark:border-white/5">
+                            <div id="q6-chk" class="w-5 h-5 rounded-md border border-slate-400 dark:border-slate-600 flex items-center justify-center text-xs shrink-0 bg-white/50 dark:bg-slate-800"><i class="fa-solid fa-check text-slate-300 dark:text-slate-650"></i></div>
+                            <div class="min-w-0">
+                                <p class="font-bold text-xs text-slate-800 dark:text-slate-200 truncate">6. 스크롤 끝까지 완독하기</p>
+                                <p class="text-[10px] text-slate-400 font-semibold">+30 XP 지급</p>
+                            </div>
+                        </div>
+                        <!-- 미션 7 -->
+                        <div class="flex items-center gap-2.5 p-2.5 rounded-xl bg-white/40 dark:bg-slate-900/40 border border-white/40 dark:border-white/5">
+                            <div id="q7-chk" class="w-5 h-5 rounded-md border border-slate-400 dark:border-slate-600 flex items-center justify-center text-xs shrink-0 bg-white/50 dark:bg-slate-800"><i class="fa-solid fa-check text-slate-300 dark:text-slate-650"></i></div>
+                            <div class="min-w-0">
+                                <p class="font-bold text-xs text-slate-800 dark:text-slate-200 truncate">7. AI 로컬 음성 성우 청취</p>
+                                <p class="text-[10px] text-slate-400 font-semibold">+20 XP 지급</p>
+                            </div>
+                        </div>
+                        <!-- 미션 8 -->
+                        <div class="flex items-center gap-2.5 p-2.5 rounded-xl bg-white/40 dark:bg-slate-900/40 border border-white/40 dark:border-white/5">
+                            <div id="q8-chk" class="w-5 h-5 rounded-md border border-slate-400 dark:border-slate-600 flex items-center justify-center text-xs shrink-0 bg-white/50 dark:bg-slate-800"><i class="fa-solid fa-check text-slate-300 dark:text-slate-650"></i></div>
+                            <div class="min-w-0">
+                                <p class="font-bold text-xs text-slate-800 dark:text-slate-200 truncate">8. AI 여행 기념 엽서 발행</p>
+                                <p class="text-[10px] text-slate-400 font-semibold">+30 XP 지급</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- AI 및 미식 추천 인터랙티브 허브 코너 -->
+        <section id="selector" class="py-10">
+            <div class="glass-panel rounded-3xl shadow-2xl overflow-hidden relative">
+                <div class="absolute top-0 right-0 w-48 h-48 bg-blue-500/10 rounded-full blur-3xl -z-10"></div>
+                
+                <!-- 탭 헤더 (3가지 기능 분류) -->
+                <div class="flex border-b border-slate-200 dark:border-slate-800/80 bg-white/20 dark:bg-slate-900/10">
+                    <button id="tab-ai" onclick="switchSelectorTab('ai')" class="flex-1 py-5 text-center font-black text-xs sm:text-sm border-b-2 border-blue-600 dark:border-blue-400 text-blue-600 dark:text-blue-400 transition-all flex items-center justify-center gap-2">
+                        <i class="fa-solid fa-brain"></i> AI 컨시어지
+                    </button>
+                    <button id="tab-postcard" onclick="switchSelectorTab('postcard')" class="flex-1 py-5 text-center font-black text-xs sm:text-sm border-b-2 border-transparent text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200 transition-all flex items-center justify-center gap-2">
+                        <i class="fa-regular fa-image"></i> AI 기념 엽서
+                    </button>
+                    <button id="tab-quiz" onclick="switchSelectorTab('quiz')" class="flex-1 py-5 text-center font-black text-xs sm:text-sm border-b-2 border-transparent text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200 transition-all flex items-center justify-center gap-2">
+                        <i class="fa-solid fa-list-check"></i> 맞춤형 퀴즈
+                    </button>
+                </div>
+
+                <!-- 탭 1: AI 로컬 실시간 미식 컨시어지 -->
+                <div id="panel-ai" class="p-5 sm:p-8 space-y-5">
+                    <div class="text-center max-w-xl mx-auto mb-3">
+                        <span class="text-[10px] font-black text-blue-600 dark:text-blue-400 uppercase tracking-widest bg-blue-100/40 dark:bg-blue-950/40 px-3 py-1 rounded-md border border-blue-500/10">Gemini 3.1 Grounded</span>
+                        <h3 class="text-lg sm:text-2xl font-black text-slate-900 dark:text-white mt-2">지능형 AI 미식 컨시어지</h3>
+                        <p class="text-xs text-slate-500 dark:text-slate-400 mt-1 font-semibold leading-relaxed">김해 3대 추천 맛집을 기저에 두고, 근처 연계 카페 코스나 대중교통 동선을 실시간 구글 검색 데이터에 기반하여 정밀 가이드합니다.</p>
                     </div>
 
-                    <div class="flex justify-center pt-2">
-                        <button onclick="resetQuiz()" class="inline-flex items-center gap-1.5 text-xs font-black text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200 active:scale-95 bg-white/50 dark:bg-slate-800/50 hover:bg-white dark:hover:bg-slate-700 py-2.5 px-4 rounded-xl transition-all border border-white/40 dark:border-white/5">
-                            <i class="fa-solid fa-rotate-left"></i> 결과 다시 고르기
+                    <!-- 원터치 퀵 서치 템플릿 질문 버튼 -->
+                    <div class="flex flex-wrap gap-2 justify-center">
+                        <button onclick="fillAIQuery('✈️ 김해공항 이용 전에 든든하고 신속하게 순대국밥을 먹고 탑승하는 추천 이동 동선을 알려줘!')" class="bg-white/50 hover:bg-blue-50 hover:text-blue-700 dark:bg-slate-900/40 dark:hover:bg-blue-950/40 dark:text-slate-300 dark:hover:text-blue-300 active:scale-95 text-[11px] font-black px-3.5 py-2 rounded-xl transition-all border border-slate-200 dark:border-slate-800 shadow-sm">
+                            ✈️ 공항 가기 전 한끼 플랜
+                        </button>
+                        <button onclick="fillAIQuery('☕ 매콤한 춘천명물닭갈비를 먹고 주변에 도보로 10분 내 이동 가능한 핫한 감성 카페나 공원 산책 코스 알려줘')" class="bg-white/50 hover:bg-blue-50 hover:text-blue-700 dark:bg-slate-900/40 dark:hover:bg-blue-950/40 dark:text-slate-300 dark:hover:text-blue-300 active:scale-95 text-[11px] font-black px-3.5 py-2 rounded-xl transition-all border border-slate-200 dark:border-slate-800 shadow-sm">
+                            ☕ 식후 최단코스 카페
+                        </button>
+                    </div>
+
+                    <!-- 실시간 출력 전용 창 -->
+                    <div class="bg-white/40 dark:bg-slate-950/30 rounded-2xl border border-slate-200/50 dark:border-slate-800/40 p-5 min-h-[160px] max-h-[380px] overflow-y-auto flex flex-col justify-between transition-colors duration-300" id="ai-response-box">
+                        <div id="ai-response-placeholder" class="text-slate-450 text-sm text-center py-10">
+                            <i class="fa-solid fa-robot text-3xl mb-2 text-blue-500/60 animate-bounce"></i>
+                            <p class="font-black text-slate-700 dark:text-slate-300">위의 프리셋 질문을 터치하거나 아래 검색창에 직접 문의해 보세요!</p>
+                            <p class="text-[11px] text-slate-400 mt-1 font-semibold">예: "돼지국밥 든든히 먹고 가야유적지 투어할 동선 알려줘!"</p>
+                        </div>
+                        <div id="ai-response-content" class="hidden text-slate-800 dark:text-slate-200 text-sm leading-relaxed text-left space-y-3 font-semibold transition-colors">
+                            <!-- 동적 답변 노출 구역 -->
+                        </div>
+                    </div>
+
+                    <!-- AI 음성 가이드 TTS 제어기 -->
+                    <div id="ai-tts-panel" class="hidden flex items-center justify-between p-3.5 rounded-2xl bg-blue-500/10 border border-blue-500/20 backdrop-blur-sm">
+                        <div class="flex items-center gap-2">
+                            <span class="relative flex h-3 w-3">
+                                <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-blue-400 opacity-75"></span>
+                                <span class="relative inline-flex rounded-full h-3 w-3 bg-blue-500"></span>
+                            </span>
+                            <span class="text-xs font-black text-slate-800 dark:text-slate-200">생성된 맛집 가이드 음성 트랙이 있습니다.</span>
+                        </div>
+                        <button id="tts-play-btn" onclick="playAITTS()" class="bg-blue-600 hover:bg-blue-700 text-white font-black text-xs py-2 px-4 rounded-xl flex items-center gap-1.5 shadow active:scale-95 transition-all">
+                            <i class="fa-solid fa-volume-high"></i> <span id="tts-btn-text">AI 성우 가이드 듣기</span>
+                        </button>
+                        <audio id="tts-audio-element" class="hidden"></audio>
+                    </div>
+
+                    <!-- 유저 질문 인풋 컨트롤 그룹 -->
+                    <div class="flex flex-col sm:flex-row gap-2">
+                        <input type="text" id="ai-query-input" placeholder="김해 여행 동선이나 맛집 연계 코스를 물어보세요..." class="flex-1 px-4 py-3.5 rounded-2xl bg-white/60 dark:bg-slate-950/60 text-slate-800 dark:text-slate-100 border border-slate-200/60 dark:border-slate-800 focus:bg-white dark:focus:bg-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-xs sm:text-sm font-bold shadow-inner transition-all">
+                        <button id="ai-submit-btn" onclick="sendQueryToAI()" class="bg-blue-600 hover:bg-blue-700 active:scale-95 text-white font-black px-6 py-3.5 rounded-2xl transition-all flex items-center justify-center gap-1.5 text-xs sm:text-sm shadow-lg shadow-blue-500/20 shrink-0">
+                            <span id="btn-text">질문하기</span> <i class="fa-solid fa-paper-plane"></i>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- 탭 2: AI 여행 기념 엽서 제작소 (Imagen 4.0 연동) -->
+                <div id="panel-postcard" class="hidden p-5 sm:p-8 space-y-5">
+                    <div class="text-center max-w-xl mx-auto mb-3">
+                        <span class="text-[10px] font-black text-purple-600 dark:text-purple-400 uppercase tracking-widest bg-purple-100/40 dark:bg-purple-950/40 px-3 py-1 rounded-md border border-purple-500/10">Imagen 4.0 Art Studio</span>
+                        <h3 class="text-lg sm:text-2xl font-black text-slate-900 dark:text-white mt-2">AI 미식 기념 엽서 발행기</h3>
+                        <p class="text-xs text-slate-500 dark:text-slate-400 mt-1 font-semibold leading-relaxed">김해에서의 로맨틱한 순간과 원하시는 일러스트풍 이미지를 엽서로 발행하여 영구 간직하세요.</p>
+                    </div>
+
+                    <!-- 엽서 생성 전용 아이디어 프리셋 -->
+                    <div class="flex flex-wrap gap-2 justify-center">
+                        <button onclick="fillPostcardQuery('A peaceful cozy traditional house in Gimhae with thousands of warm cherry blossoms fluttering, soft anime watercolor style.')" class="bg-white/50 hover:bg-purple-50 hover:text-purple-700 dark:bg-slate-900/40 dark:hover:bg-purple-950/40 dark:text-slate-300 dark:hover:text-purple-300 active:scale-95 text-[11px] font-black px-3.5 py-2 rounded-xl transition-all border border-slate-200 dark:border-slate-800 shadow-sm">
+                            🌸 연지공원 흐드러진 벚꽃 축제
+                        </button>
+                        <button onclick="fillPostcardQuery('A steaming hot bowl of Korean pork soup (Gukbap) drawn in high resolution retro Ghibli style, detailed handdrawn.')" class="bg-white/50 hover:bg-purple-50 hover:text-purple-700 dark:bg-slate-900/40 dark:hover:bg-purple-950/40 dark:text-slate-300 dark:hover:text-purple-300 active:scale-95 text-[11px] font-black px-3.5 py-2 rounded-xl transition-all border border-slate-200 dark:border-slate-800 shadow-sm">
+                            🍲 김해 소울푸드 돼지국밥 일러스트
+                        </button>
+                    </div>
+
+                    <!-- 엽서 노출 전용 액자 컴포넌트 -->
+                    <div class="bg-white/40 dark:bg-slate-950/30 rounded-2xl border border-slate-200/50 dark:border-slate-800/40 p-6 flex flex-col items-center justify-center min-h-[220px]" id="postcard-frame">
+                        <div id="postcard-placeholder" class="text-center py-6">
+                            <i class="fa-solid fa-palette text-3xl mb-2 text-purple-500/60 animate-pulse"></i>
+                            <p class="font-black text-slate-700 dark:text-slate-300">프리셋 아이디어를 터치하거나 원하는 상상 풍경을 입력하세요.</p>
+                        </div>
+                        
+                        <!-- 엽서 아웃풋 (인쇄 카드 디자인) -->
+                        <div id="postcard-output-container" class="hidden w-full max-w-sm bg-white dark:bg-slate-900 p-4 rounded-xl shadow-2xl border border-slate-200 dark:border-slate-850 transform rotate-1 transition-all duration-300">
+                            <img id="postcard-image" src="" alt="Gimhae Souvenir Postcard" class="w-full aspect-video object-cover rounded-lg shadow-inner border border-slate-100 dark:border-slate-950">
+                            <div class="pt-3 text-center">
+                                <span class="font-mono text-[9px] text-slate-400 tracking-widest">★ GIMHAE ART SOUVENIR 2026 ★</span>
+                                <p id="postcard-prompt-caption" class="text-xs font-black text-slate-600 dark:text-slate-300 mt-1 truncate px-2">Prompt Caption</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 엽서 생성 전용 프롬프트 인풋 -->
+                    <div class="flex flex-col sm:flex-row gap-2">
+                        <input type="text" id="postcard-query-input" placeholder="엽서로 남겨보고 싶은 가야 유적지 풍경이나 음식 묘사를 영문이나 국문으로 작성해 보세요..." class="flex-1 px-4 py-3.5 rounded-2xl bg-white/60 dark:bg-slate-950/60 text-slate-850 dark:text-slate-100 border border-slate-200/60 dark:border-slate-800 focus:bg-white dark:focus:bg-slate-900 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent text-xs sm:text-sm font-bold shadow-inner transition-all">
+                        <button id="postcard-submit-btn" onclick="generatePostcard()" class="bg-purple-600 hover:bg-purple-700 active:scale-95 text-white font-black px-6 py-3.5 rounded-2xl transition-all flex items-center justify-center gap-1.5 text-xs sm:text-sm shadow-lg shadow-purple-500/20 shrink-0">
+                            <span id="postcard-btn-text">엽서 발행하기</span> <i class="fa-solid fa-wand-magic-sparkles"></i>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- 탭 3: 3초 기분 맞춤 퀴즈 -->
+                <div id="panel-quiz" class="hidden p-5 sm:p-8">
+                    <!-- 문제 선택 화면 -->
+                    <div id="quiz-question-container" class="space-y-6 text-center max-w-lg mx-auto py-4">
+                        <div>
+                            <span class="text-[10px] font-black text-indigo-600 dark:text-indigo-400 uppercase tracking-widest bg-indigo-100/40 dark:bg-indigo-950/40 px-3 py-1 rounded-md border border-indigo-500/10">3초 맞춤 큐레이션</span>
+                            <h3 class="text-lg sm:text-2xl font-black text-slate-900 dark:text-white mt-2">오늘 어떤 한 끼가 필요하신가요?</h3>
+                            <p class="text-xs text-slate-500 dark:text-slate-400 mt-1 font-semibold">지금 끌리는 기분 코드를 선택하시면 완벽한 식당을 골라 매칭해 드립니다.</p>
+                        </div>
+                        <div class="grid grid-cols-1 sm:grid-cols-3 gap-3.5 pt-2">
+                            <button onclick="selectQuizOption('korean')" class="flex flex-col items-center gap-3 p-4 bg-white/50 dark:bg-slate-900/40 rounded-2xl border border-slate-200 dark:border-slate-800 hover:border-blue-500 hover:bg-blue-50/20 dark:hover:border-blue-400 dark:hover:bg-blue-950/20 transition-all active:scale-95">
+                                <span class="text-4xl">🍲</span>
+                                <span class="text-xs font-black text-slate-900 dark:text-white">뜨끈한 한국인의 맑은 영혼 보충</span>
+                            </button>
+                            <button onclick="selectQuizOption('dense')" class="flex flex-col items-center gap-3 p-4 bg-white/50 dark:bg-slate-900/40 rounded-2xl border border-slate-200 dark:border-slate-800 hover:border-blue-500 hover:bg-blue-50/20 dark:hover:border-blue-400 dark:hover:bg-blue-950/20 transition-all active:scale-95">
+                                <span class="text-4xl">🥣</span>
+                                <span class="text-xs font-black text-slate-900 dark:text-white">묵직하고 영양 가득한 소울푸드</span>
+                            </button>
+                            <button onclick="selectQuizOption('spicy')" class="flex flex-col items-center gap-3 p-4 bg-white/50 dark:bg-slate-900/40 rounded-2xl border border-slate-200 dark:border-slate-800 hover:border-blue-500 hover:bg-blue-50/20 dark:hover:border-blue-400 dark:hover:bg-blue-950/20 transition-all active:scale-95">
+                                <span class="text-4xl">🔥</span>
+                                <span class="text-xs font-black text-slate-900 dark:text-white">화끈하고 매콤달콤 스트레스 해소</span>
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- 결과 노출 화면 -->
+                    <div id="quiz-result-container" class="hidden space-y-6 text-center max-w-lg mx-auto py-6">
+                        <div id="quiz-result-card" class="bg-white/60 dark:bg-slate-900/60 border border-slate-200 dark:border-slate-800 rounded-3xl p-6 sm:p-8 shadow-lg">
+                            <!-- 동적 매칭 결과 삽입 -->
+                        </div>
+                        <button onclick="resetQuiz()" class="text-xs font-black text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-white flex items-center gap-1.5 mx-auto transition-colors">
+                            <i class="fa-solid fa-arrow-rotate-left"></i> 처음부터 다시 매칭받기
                         </button>
                     </div>
                 </div>
             </div>
+        </section>
 
-        </div>
-    </section>
-
-    <!-- 본문 맛집 추천 리스트 영역 -->
-    <main id="restaurants" class="py-12 sm:py-20 w-full transition-colors duration-300 relative z-10">
-        <div class="max-w-5xl mx-auto px-4 sm:px-6">
-            <div class="text-center mb-10 sm:mb-16">
-                <span class="text-xs font-black text-blue-600 dark:text-blue-400 uppercase tracking-widest bg-blue-100/50 dark:bg-blue-950/40 px-3 py-1.5 rounded-md transition-colors duration-300 border border-blue-500/10">Verified Selection</span>
-                <h2 class="text-2xl sm:text-4xl font-black text-slate-900 dark:text-white mt-3 tracking-tight transition-colors duration-300">김해의 소문난 맛집 Top 3</h2>
-                <p class="text-slate-700 dark:text-slate-350 mt-3 text-xs sm:text-base max-w-lg mx-auto leading-relaxed font-semibold transition-colors duration-300">타지인들의 안전하고 신뢰할 수 있는 미식 탐방을 위해 검증된 명소만을 선별했습니다.</p>
+        <!-- 명품 맛집 Top 3 정보 소개 카드 섹션 -->
+        <section id="restaurants" class="py-10 space-y-8">
+            <div class="text-center space-y-2">
+                <span class="text-xs font-black text-blue-600 dark:text-blue-400 bg-blue-100/40 dark:bg-blue-950/40 px-3.5 py-1.5 rounded-full border border-blue-500/10">3 CUSTOM SELECTED RESTAURANTS</span>
+                <h3 class="text-2xl sm:text-3xl font-extrabold text-slate-900 dark:text-white">검증된 김해 3대 천왕 맛집 리스트</h3>
+                <p class="text-xs sm:text-sm text-slate-500 dark:text-slate-400 font-semibold">동선 확인을 돕기 위해 실시간 복사가 가능한 도로명 주소와 네이버 지도 연결 기능을 함께 탑재했습니다.</p>
             </div>
 
-            <div class="space-y-8 sm:space-y-14">
+            <!-- 맛집 리스트 그리드 레이아웃 -->
+            <div class="grid grid-cols-1 gap-8">
                 
-                <!-- 1. 더도이 종가집 돼지국밥 -->
-                <div id="restaurant-dedoi" class="glass-panel rounded-3xl overflow-hidden shadow-2xl flex flex-col lg:flex-row transform transition-all duration-300 hover:shadow-blue-500/5 hover:-translate-y-1">
-                    <div class="lg:w-2/5 bg-gradient-to-br from-blue-900/90 to-blue-800/90 p-6 sm:p-8 flex flex-col justify-between text-white relative">
-                        <div class="absolute top-0 right-0 w-32 h-32 bg-blue-700/20 rounded-full blur-2xl"></div>
-                        <div class="relative">
-                            <span class="bg-blue-500/40 text-blue-100 text-[10px] sm:text-xs font-black px-2.5 py-1 rounded-full uppercase tracking-wider">Top 1. 깔끔한 소울푸드</span>
-                            <h3 class="text-xl sm:text-2xl lg:text-3xl font-black mt-3 sm:mt-4 mb-2 tracking-tight">더도이 종가집 돼지국밥</h3>
-                            <p class="text-blue-100 text-xs sm:text-sm leading-relaxed opacity-90 font-bold">잡내가 전혀 없기로 정평이 난 가마솥 육수로, 돼지국밥이 처음인 사람들에게도 부담 없는 최고의 한 그릇을 선사합니다.</p>
-                        </div>
-                        <div class="mt-6 sm:mt-10 lg:mt-6 flex items-center gap-3">
-                            <span class="text-3xl sm:text-4xl">🍲</span>
-                            <div>
-                                <span class="text-[10px] text-blue-200 block font-black">추천 태그</span>
-                                <span class="text-xs font-black text-white">#정갈한사골 #단골보장 #넓고쾌적</span>
-                            </div>
-                        </div>
+                <!-- 맛집 1: 더도이 종가집 돼지국밥 -->
+                <div class="glass-panel rounded-3xl p-5 sm:p-8 flex flex-col md:flex-row gap-6 sm:gap-8 hover:shadow-2xl transition-all duration-300 relative group overflow-hidden">
+                    <div class="w-full md:w-2/5 aspect-video md:aspect-square bg-slate-200 dark:bg-slate-800 rounded-2xl overflow-hidden shadow shrink-0 relative">
+                        <img src="https://placehold.co/400x400/2563eb/ffffff?text=Pork+Soup+Gukbap" alt="더도이 종가집 돼지국밥" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500">
+                        <span class="absolute top-3 left-3 bg-blue-600 text-white font-black text-xs px-3.5 py-1.5 rounded-full shadow">BEST SOULFOOD 🍲</span>
                     </div>
-                    <div class="lg:w-3/5 p-5 sm:p-8 flex flex-col justify-between">
-                        <div class="space-y-5">
+                    <div class="flex-1 flex flex-col justify-between py-1">
+                        <div class="space-y-3">
                             <div>
-                                <h4 class="text-xs font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest mb-2.5"><i class="fa-solid fa-list-check mr-1 text-slate-400"></i>식당 핵심 가이드</h4>
-                                <ul class="space-y-2.5 text-xs sm:text-sm font-bold">
-                                    <li class="flex items-start gap-2 text-slate-700 dark:text-slate-300">
-                                        <span class="text-blue-500 mt-0.5"><i class="fa-solid fa-check"></i></span>
-                                        <span><strong class="text-slate-900 dark:text-white">시그니처:</strong> 밥과 국물이 정갈히 따로 나오는 '따로돼지국밥' & 야들야들한 '수육백반'</span>
-                                    </li>
-                                    <li class="flex items-start gap-2 text-slate-700 dark:text-slate-300">
-                                        <span class="text-blue-500 mt-0.5"><i class="fa-solid fa-check"></i></span>
-                                        <span><strong class="text-slate-900 dark:text-white">특징:</strong> 주차 환경이 잘 되어 있고 홀이 매우 넓어 단체/가족 방문으로 아주 좋습니다.</span>
-                                    </li>
-                                    <li class="flex items-start gap-2 text-slate-700 dark:text-slate-300">
-                                        <span class="text-blue-500 mt-0.5"><i class="fa-solid fa-location-dot"></i></span>
-                                        <span><strong class="text-slate-900 dark:text-white">위치:</strong> 경상남도 김해시 분성로 152</span>
-                                    </li>
-                                </ul>
+                                <span class="text-[10px] font-black text-blue-600 dark:text-blue-400">01. 든든하고 맑고 깊은 영혼의 국물</span>
+                                <h4 class="text-xl sm:text-2xl font-black text-slate-950 dark:text-white mt-1">더도이 종가집 돼지국밥</h4>
                             </div>
-                            
-                            <div class="bg-white/40 dark:bg-slate-950/40 backdrop-blur-sm p-3 rounded-2xl flex items-center justify-between border border-white/50 dark:border-white/5 transition-colors duration-300">
-                                <span class="text-xs text-slate-600 dark:text-slate-400 truncate mr-2 font-black" id="addr-1">경상남도 김해시 분성로 152</span>
-                                <button onclick="copyToClipboard('경상남도 김해시 분성로 152')" class="flex-shrink-0 bg-white/70 dark:bg-slate-800/70 active:scale-95 text-slate-700 dark:text-slate-300 text-xs font-black py-1.5 px-3 rounded-xl border border-white/50 dark:border-white/5 transition-all flex items-center gap-1.5 shadow-sm">
-                                    <i class="fa-regular fa-copy"></i> 주소 복사
-                                </button>
+                            <p class="text-xs sm:text-sm text-slate-650 dark:text-slate-300 leading-relaxed font-bold">
+                                가마솥에서 24시간 푹 고아내 잡내를 원천 차단한 뽀얗고 고소한 국물이 일품입니다. 넓은 전용 주차장을 완비하여 자차 및 렌터카를 소지한 타지 여행객에게 편의성이 매우 뛰어납니다. 윤기가 흐르는 수육백반 세트를 꼭 드셔보시길 강력 추천해 드립니다.
+                            </p>
+                            <div class="flex flex-wrap gap-1.5 pt-1">
+                                <span class="bg-blue-50 dark:bg-slate-900 border border-blue-100 dark:border-slate-800 text-[10px] text-blue-700 dark:text-blue-300 px-2.5 py-1 rounded-md font-bold">가마솥 육수</span>
+                                <span class="bg-blue-50 dark:bg-slate-900 border border-blue-100 dark:border-slate-800 text-[10px] text-blue-700 dark:text-blue-300 px-2.5 py-1 rounded-md font-bold">수육백반 명가</span>
+                                <span class="bg-blue-50 dark:bg-slate-900 border border-blue-100 dark:border-slate-800 text-[10px] text-blue-700 dark:text-blue-300 px-2.5 py-1 rounded-md font-bold">대형 주차장 완비</span>
                             </div>
                         </div>
 
-                        <div class="mt-6 pt-5 border-t border-white/20 dark:border-white/5 flex flex-col">
-                            <a href="https://map.naver.com/p/search/%EB%8D%94%EB%8F%84%EC%9D%B4%EB%8F%BC%EC%A7%80%EA%B5%AD%EB%B0%A5/place/21121425?c=15.00,0,0,0,dh&placePath=%2Fhome%3Fbk_query%3D%EB%8D%94%EB%8F%84%EC%9D%B4%EB%8F%BC%EC%A7%80%EA%B5%AD%EB%B0%A5%26entry%3Dpll%26from%3Dmap%26fromPanelNum%3D2%26timestamp%3D202607101703%26locale%3Dko%26svcName%3Dmap_pcv5%26searchText%3D%EB%8D%94%EB%8F%84%EC%9D%B4%EB%8F%BC%EC%A7%80%EA%B5%AD%EB%B0%A5" 
-                               target="_blank" rel="noopener noreferrer" 
-                               class="inline-flex items-center justify-center gap-2 bg-emerald-500 hover:bg-emerald-600 active:scale-95 text-white font-black py-3.5 px-5 rounded-2xl shadow-lg shadow-emerald-500/20 transition-all text-sm">
-                                <i class="fa-solid fa-map-location-dot"></i> 네이버 지도로 보기
+                        <!-- 인터랙티브 복사 및 지도 링크 존 -->
+                        <div class="mt-6 pt-4 border-t border-slate-200/60 dark:border-slate-800/60 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                            <div class="flex items-center gap-2 max-w-full">
+                                <i class="fa-solid fa-map-pin text-blue-600 dark:text-blue-400 shrink-0 text-sm"></i>
+                                <span class="text-xs font-black text-slate-500 dark:text-slate-400 truncate">경상남도 김해시 분성로 152</span>
+                                <button onclick="copyToClipboard('경상남도 김해시 분성로 152', '1')" class="bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 p-2 rounded-xl transition-all active:scale-95 inline-flex shrink-0">
+                                    <i id="copy-icon-1" class="fa-regular fa-copy text-xs text-slate-650 dark:text-slate-300"></i>
+                                </button>
+                            </div>
+                            <a onclick="trackMapClick()" href="https://map.naver.com/p/search/%EB%8D%94%EB%8F%84%EC%9D%B4%EB%8F%BC%EC%A7%80%EA%B5%AD%EB%B0%A5/place/21121425?c=15.00,0,0,0,dh&placePath=%2Fhome%3Fbk_query%3D%EB%8D%94%EB%8F%84%EC%9D%B4%EB%8F%BC%EC%A7%80%EA%B5%AD%EB%B0%A5%26entry%3Dpll%26from%3Dmap%26fromPanelNum%3D2%26timestamp%3D202607101703%26locale%3Dko%26svcName%3Dmap_pcv5%26searchText%3D%EB%8D%94%EB%8F%84%EC%9D%B4%EB%8F%BC%EC%A7%80%EA%B5%AD%EB%B0%A5" target="_blank" rel="noopener noreferrer" class="bg-blue-600 hover:bg-blue-700 text-white font-black text-xs py-3 px-5 rounded-2xl flex items-center justify-center gap-1.5 shadow-lg shadow-blue-500/10 active:scale-95 transition-all">
+                                실시간 네이버 지도 연결 <i class="fa-solid fa-square-arrow-up-right"></i>
                             </a>
                         </div>
                     </div>
                 </div>
 
-                <!-- 2. 무봉리토종순대국 -->
-                <div id="restaurant-mubong" class="glass-panel rounded-3xl overflow-hidden shadow-2xl flex flex-col lg:flex-row transform transition-all duration-300 hover:shadow-blue-500/5 hover:-translate-y-1">
-                    <div class="lg:w-2/5 bg-gradient-to-br from-indigo-900/90 to-indigo-800/90 p-6 sm:p-8 flex flex-col justify-between text-white relative">
-                        <div class="absolute top-0 right-0 w-32 h-32 bg-indigo-700/20 rounded-full blur-2xl"></div>
-                        <div class="relative">
-                            <span class="bg-indigo-500/40 text-indigo-100 text-[10px] sm:text-xs font-black px-2.5 py-1 rounded-full uppercase tracking-wider">Top 2. 담백 구수한 고향의 맛</span>
-                            <h3 class="text-xl sm:text-2xl lg:text-3xl font-black mt-3 sm:mt-4 mb-2 tracking-tight">무봉리토종순대국</h3>
-                            <p class="text-indigo-100 text-xs sm:text-sm leading-relaxed opacity-90 font-bold">오랜 세월 가마솥에서 푹 고아 우려낸 사골 육수와, 갖은 야채와 고기로 꽉 찬 토종 순대의 콜라보레이션이 일품입니다.</p>
-                        </div>
-                        <div class="mt-6 sm:mt-10 lg:mt-6 flex items-center gap-3">
-                            <span class="text-3xl sm:text-4xl">🥣</span>
-                            <div>
-                                <span class="text-[10px] text-indigo-200 block font-black">추천 태그</span>
-                                <span class="text-xs font-black text-white">#정통의맛 #든든함의정수 #속편한소화</span>
-                            </div>
-                        </div>
+                <!-- 맛집 2: 무봉리토종순대국 -->
+                <div class="glass-panel rounded-3xl p-5 sm:p-8 flex flex-col md:flex-row gap-6 sm:gap-8 hover:shadow-2xl transition-all duration-300 relative group overflow-hidden">
+                    <div class="w-full md:w-2/5 aspect-video md:aspect-square bg-slate-200 dark:bg-slate-800 rounded-2xl overflow-hidden shadow shrink-0 relative">
+                        <img src="https://placehold.co/400x400/16a34a/ffffff?text=Sundaeguk+Soup" alt="무봉리토종순대국" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500">
+                        <span class="absolute top-3 left-3 bg-green-600 text-white font-black text-xs px-3.5 py-1.5 rounded-full shadow">TRADITIONAL 🥣</span>
                     </div>
-                    <div class="lg:w-3/5 p-5 sm:p-8 flex flex-col justify-between">
-                        <div class="space-y-5">
+                    <div class="flex-1 flex flex-col justify-between py-1">
+                        <div class="space-y-3">
                             <div>
-                                <h4 class="text-xs font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest mb-2.5"><i class="fa-solid fa-list-check mr-1 text-slate-400"></i>식당 핵심 가이드</h4>
-                                <ul class="space-y-2.5 text-xs sm:text-sm font-bold">
-                                    <li class="flex items-start gap-2 text-slate-700 dark:text-slate-300">
-                                        <span class="text-indigo-500 mt-0.5"><i class="fa-solid fa-check"></i></span>
-                                        <span><strong class="text-slate-900 dark:text-white">시그니처:</strong> 쫄깃쫄깃 야들야들한 '토종순대국밥' & 푸짐한 '모듬순대'</span>
-                                    </li>
-                                    <li class="flex items-start gap-2 text-slate-700 dark:text-slate-300">
-                                        <span class="text-indigo-500 mt-0.5"><i class="fa-solid fa-check"></i></span>
-                                        <span><strong class="text-slate-900 dark:text-white">특징:</strong> 시원하고 아삭한 배추 겉절이가 식사의 깊은 감칠맛을 완벽하게 마무리합니다.</span>
-                                    </li>
-                                    <li class="flex items-start gap-2 text-slate-700 dark:text-slate-300">
-                                        <span class="text-indigo-500 mt-0.5"><i class="fa-solid fa-location-dot"></i></span>
-                                        <span><strong class="text-slate-900 dark:text-white">위치:</strong> 경상남도 김해시 장유면 내덕로 46</span>
-                                    </li>
-                                </ul>
+                                <span class="text-[10px] font-black text-green-600 dark:text-green-400">02. 깊고 진한 전통 사골육수와 명품 순대</span>
+                                <h4 class="text-xl sm:text-2xl font-black text-slate-950 dark:text-white mt-1">무봉리토종순대국 (내덕점)</h4>
                             </div>
-                            
-                            <div class="bg-white/40 dark:bg-slate-950/40 backdrop-blur-sm p-3 rounded-2xl flex items-center justify-between border border-white/50 dark:border-white/5 transition-colors duration-300">
-                                <span class="text-xs text-slate-600 dark:text-slate-400 truncate mr-2 font-black" id="addr-2">경상남도 김해시 장유면 내덕로 46</span>
-                                <button onclick="copyToClipboard('경상남도 김해시 장유면 내덕로 46')" class="flex-shrink-0 bg-white/70 dark:bg-slate-800/70 active:scale-95 text-slate-700 dark:text-slate-300 text-xs font-black py-1.5 px-3 rounded-xl border border-white/50 dark:border-white/5 transition-all flex items-center gap-1.5 shadow-sm">
-                                    <i class="fa-regular fa-copy"></i> 주소 복사
-                                </button>
+                            <p class="text-xs sm:text-sm text-slate-650 dark:text-slate-300 leading-relaxed font-bold">
+                                꽉 채워진 튼실한 전통 사골토종순대와 부속 고기가 뚝배기에 아낌없이 담겨 나옵니다. 매일 아침마다 사장님이 직접 버무리는 고소하고 아삭한 배추겉절이 김치와 잘 익은 석박지 깍두기가 환상적인 밸런스를 맞춥니다. 한끼 식사로 속이 아주 든든해지는 전통 명가입니다.
+                            </p>
+                            <div class="flex flex-wrap gap-1.5 pt-1">
+                                <span class="bg-green-50 dark:bg-slate-900 border border-green-100 dark:border-slate-800 text-[10px] text-green-700 dark:text-green-300 px-2.5 py-1 rounded-md font-bold">전통 사골육수</span>
+                                <span class="bg-green-50 dark:bg-slate-900 border border-green-100 dark:border-slate-800 text-[10px] text-green-700 dark:text-green-300 px-2.5 py-1 rounded-md font-bold">수제 겉절이김치</span>
+                                <span class="bg-green-50 dark:bg-slate-900 border border-green-100 dark:border-slate-800 text-[10px] text-green-700 dark:text-green-300 px-2.5 py-1 rounded-md font-bold">소울푸드 토종순대</span>
                             </div>
                         </div>
 
-                        <div class="mt-6 pt-5 border-t border-white/20 dark:border-white/5 flex flex-col">
-                            <a href="https://map.naver.com/p/search/%EB%AC%B4%EB%B4%89%EB%A6%AC%EC%88%9C%EB%8C%80%EA%B5%AD/place/15200126?c=13.00,0,0,0,dh&placePath=%2Fhome%3Fentry%3Dbmp%26from%3Dmap%26fromPanelNum%3D2%26timestamp%3D202607101703%26locale%3Dko%26svcName%3Dmap_pcv5%26searchText%3D%EB%AC%B4%EB%B4%89%EB%A6%AC%EC%88%9C%EB%8C%80%EA%B5%AD" 
-                               target="_blank" rel="noopener noreferrer" 
-                               class="inline-flex items-center justify-center gap-2 bg-emerald-500 hover:bg-emerald-600 active:scale-95 text-white font-black py-3.5 px-5 rounded-2xl shadow-lg shadow-emerald-500/20 transition-all text-sm">
-                                <i class="fa-solid fa-map-location-dot"></i> 네이버 지도로 보기
+                        <!-- 인터랙티브 복사 및 지도 링크 존 -->
+                        <div class="mt-6 pt-4 border-t border-slate-200/60 dark:border-slate-800/60 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                            <div class="flex items-center gap-2 max-w-full">
+                                <i class="fa-solid fa-map-pin text-green-600 dark:text-green-400 shrink-0 text-sm"></i>
+                                <span class="text-xs font-black text-slate-500 dark:text-slate-400 truncate">경상남도 김해시 장유면 내덕로 46</span>
+                                <button onclick="copyToClipboard('경상남도 김해시 장유면 내덕로 46', '2')" class="bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 p-2 rounded-xl transition-all active:scale-95 inline-flex shrink-0">
+                                    <i id="copy-icon-2" class="fa-regular fa-copy text-xs text-slate-650 dark:text-slate-300"></i>
+                                </button>
+                            </div>
+                            <a onclick="trackMapClick()" href="https://map.naver.com/p/search/%EB%AC%B4%EB%B4%89%EB%A6%AC%EC%88%9C%EB%8C%80%EA%B5%AD/place/15200126?c=13.00,0,0,0,dh&placePath=%2Fhome%3Fentry%3Dbmp%26from%3Dmap%26fromPanelNum%3D2%26timestamp%3D202607101703%26locale%3Dko%26svcName%3Dmap_pcv5%26searchText%3D%EB%AC%B4%EB%B4%89%EB%A6%AC%EC%88%9C%EB%8C%80%EA%B5%AD" target="_blank" rel="noopener noreferrer" class="bg-green-600 hover:bg-green-700 text-white font-black text-xs py-3 px-5 rounded-2xl flex items-center justify-center gap-1.5 shadow-lg shadow-green-500/10 active:scale-95 transition-all">
+                                실시간 네이버 지도 연결 <i class="fa-solid fa-square-arrow-up-right"></i>
                             </a>
                         </div>
                     </div>
                 </div>
 
-                <!-- 3. 춘천명물닭갈비 -->
-                <div id="restaurant-dakgalbi" class="glass-panel rounded-3xl overflow-hidden shadow-2xl flex flex-col lg:flex-row transform transition-all duration-300 hover:shadow-blue-500/5 hover:-translate-y-1">
-                    <div class="lg:w-2/5 bg-gradient-to-br from-red-950/90 to-red-900/90 p-6 sm:p-8 flex flex-col justify-between text-white relative">
-                        <div class="absolute top-0 right-0 w-32 h-32 bg-red-700/20 rounded-full blur-2xl"></div>
-                        <div class="relative">
-                            <span class="bg-red-500/40 text-red-100 text-[10px] sm:text-xs font-black px-2.5 py-1 rounded-full uppercase tracking-wider">Top 3. 기력 보충 매콤달콤</span>
-                            <h3 class="text-xl sm:text-2xl lg:text-3xl font-black mt-3 sm:mt-4 mb-2 tracking-tight">춘천명물닭갈비</h3>
-                            <p class="text-red-100 text-xs sm:text-sm leading-relaxed opacity-90 font-bold">푸짐하고 부드러운 순살 닭고기를 신선한 채소와 비법 양념장으로 달궈진 무쇠 철판 위에 환상적으로 복아냅니다.</p>
-                        </div>
-                        <div class="mt-6 sm:mt-10 lg:mt-6 flex items-center gap-3">
-                            <span class="text-3xl sm:text-4xl">🔥</span>
-                            <div>
-                                <span class="text-[10px] text-red-200 block font-black">추천 태그</span>
-                                <span class="text-xs font-black text-white">#양념철판볶음 #마무리볶음밥 #침샘자극</span>
-                            </div>
-                        </div>
+                <!-- 맛집 3: 춘천명물닭갈비 -->
+                <div class="glass-panel rounded-3xl p-5 sm:p-8 flex flex-col md:flex-row gap-6 sm:gap-8 hover:shadow-2xl transition-all duration-300 relative group overflow-hidden">
+                    <div class="w-full md:w-2/5 aspect-video md:aspect-square bg-slate-200 dark:bg-slate-800 rounded-2xl overflow-hidden shadow shrink-0 relative">
+                        <img src="https://placehold.co/400x400/dc2626/ffffff?text=Spicy+Chicken" alt="춘천명물닭갈비" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500">
+                        <span class="absolute top-3 left-3 bg-red-600 text-white font-black text-xs px-3.5 py-1.5 rounded-full shadow">HOT SPICY 🔥</span>
                     </div>
-                    <div class="lg:w-3/5 p-5 sm:p-8 flex flex-col justify-between">
-                        <div class="space-y-5">
+                    <div class="flex-1 flex flex-col justify-between py-1">
+                        <div class="space-y-3">
                             <div>
-                                <h4 class="text-xs font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest mb-2.5"><i class="fa-solid fa-list-check mr-1 text-slate-400"></i>식당 핵심 가이드</h4>
-                                <ul class="space-y-2.5 text-xs sm:text-sm font-bold">
-                                    <li class="flex items-start gap-2 text-slate-700 dark:text-slate-300">
-                                        <span class="text-red-500 mt-0.5"><i class="fa-solid fa-check"></i></span>
-                                        <span><strong class="text-slate-900 dark:text-white">시그니처:</strong> 촉촉하고 부드러운 '뼈없는 닭갈비' & '눈꽃치즈사리 볶음밥'</span>
-                                    </li>
-                                    <li class="flex items-start gap-2 text-slate-700 dark:text-slate-300">
-                                        <span class="text-red-500 mt-0.5"><i class="fa-solid fa-check"></i></span>
-                                        <span><strong class="text-slate-900 dark:text-white">특징:</strong> 매운맛 조절이 세심하게 세팅 가능하여 어르신이나 아이도 함께 만족스럽게 즐기기 좋습니다.</span>
-                                    </li>
-                                    <li class="flex items-start gap-2 text-slate-700 dark:text-slate-300">
-                                        <span class="text-red-500 mt-0.5"><i class="fa-solid fa-location-dot"></i></span>
-                                        <span><strong class="text-slate-900 dark:text-white">위치:</strong> 경상남도 김해시 내외로95번길 7</span>
-                                    </li>
-                                </ul>
+                                <span class="text-[10px] font-black text-red-600 dark:text-red-400">03. 매콤달콤한 비법 양념과 부드러운 닭다리살</span>
+                                <h4 class="text-xl sm:text-2xl font-black text-slate-950 dark:text-white mt-1">춘천명물닭갈비</h4>
                             </div>
-                            
-                            <div class="bg-white/40 dark:bg-slate-950/40 backdrop-blur-sm p-3 rounded-2xl flex items-center justify-between border border-white/50 dark:border-white/5 transition-colors duration-300">
-                                <span class="text-xs text-slate-600 dark:text-slate-400 truncate mr-2 font-black" id="addr-3">경상남도 김해시 내외로95번길 7</span>
-                                <button onclick="copyToClipboard('경상남도 김해시 내외로95번길 7')" class="flex-shrink-0 bg-white/70 dark:bg-slate-800/70 active:scale-95 text-slate-700 dark:text-slate-300 text-xs font-black py-1.5 px-3 rounded-xl border border-white/50 dark:border-white/5 transition-all flex items-center gap-1.5 shadow-sm">
-                                    <i class="fa-regular fa-copy"></i> 주소 복사
-                                </button>
+                            <p class="text-xs sm:text-sm text-slate-650 dark:text-slate-300 leading-relaxed font-bold">
+                                신선한 순살 닭다리 고기만 사용하여 극도로 촉촉하고 야들야들한 텍스처를 자랑합니다. 양배추, 고구마, 가래떡 사리가 가득 들어가며 매콤달콤한 비법 양념이 철판에 바짝 졸아들 때 눈꽃치즈 사리를 얹어 먹는 맛은 환상적입니다. 마지막 필수 코스인 날치알 볶음밥도 절대 놓치지 마세요.
+                            </p>
+                            <div class="flex flex-wrap gap-1.5 pt-1">
+                                <span class="bg-red-50 dark:bg-slate-900 border border-red-100 dark:border-slate-800 text-[10px] text-red-700 dark:text-red-300 px-2.5 py-1 rounded-md font-bold">100% 닭다리 순살</span>
+                                <span class="bg-red-50 dark:bg-slate-900 border border-red-100 dark:border-slate-800 text-[10px] text-red-700 dark:text-red-300 px-2.5 py-1 rounded-md font-bold">눈꽃치즈 추가</span>
+                                <span class="bg-red-50 dark:bg-slate-900 border border-red-100 dark:border-slate-800 text-[10px] text-red-700 dark:text-red-300 px-2.5 py-1 rounded-md font-bold">필수 날치알 볶음밥</span>
                             </div>
                         </div>
 
-                        <div class="mt-6 pt-5 border-t border-white/20 dark:border-white/5 flex flex-col">
-                            <a href="https://map.naver.com/p/entry/place/15147098?c=13.00,0,0,0,dh&placePath=%2Fhome%3Ffrom%3Dmap%26fromPanelNum%3D1%26additionalHeight%3D76%26timestamp%3D202607101704%26locale%3Dko%26svcName%3Dmap_pcv5" 
-                               target="_blank" rel="noopener noreferrer" 
-                               class="inline-flex items-center justify-center gap-2 bg-emerald-500 hover:bg-emerald-600 active:scale-95 text-white font-black py-3.5 px-5 rounded-2xl shadow-lg shadow-emerald-500/20 transition-all text-sm">
-                                <i class="fa-solid fa-map-location-dot"></i> 네이버 지도로 보기
+                        <!-- 인터랙티브 복사 및 지도 링크 존 -->
+                        <div class="mt-6 pt-4 border-t border-slate-200/60 dark:border-slate-800/60 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                            <div class="flex items-center gap-2 max-w-full">
+                                <i class="fa-solid fa-map-pin text-red-600 dark:text-red-400 shrink-0 text-sm"></i>
+                                <span class="text-xs font-black text-slate-500 dark:text-slate-400 truncate">경상남도 김해시 내외로95번길 7</span>
+                                <button onclick="copyToClipboard('경상남도 김해시 내외로95번길 7', '3')" class="bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 p-2 rounded-xl transition-all active:scale-95 inline-flex shrink-0">
+                                    <i id="copy-icon-3" class="fa-regular fa-copy text-xs text-slate-650 dark:text-slate-300"></i>
+                                </button>
+                            </div>
+                            <a onclick="trackMapClick()" href="https://map.naver.com/p/entry/place/15147098?c=13.00,0,0,0,dh&placePath=%2Fhome%3Ffrom%3Dmap%26fromPanelNum%3D1%26additionalHeight%3D76%26timestamp%3D202607101704%26locale%3Dko%26svcName%3Dmap_pcv5" target="_blank" rel="noopener noreferrer" class="bg-red-600 hover:bg-red-700 text-white font-black text-xs py-3 px-5 rounded-2xl flex items-center justify-center gap-1.5 shadow-lg shadow-red-500/10 active:scale-95 transition-all">
+                                실시간 네이버 지도 연결 <i class="fa-solid fa-square-arrow-up-right"></i>
                             </a>
                         </div>
                     </div>
                 </div>
 
             </div>
-        </div>
+        </section>
+
+        <!-- 실시간 댓글 / 방명록 세션 -->
+        <section id="guestbook" class="py-10">
+            <div class="glass-panel rounded-3xl p-5 sm:p-8 shadow-xl space-y-6">
+                <div>
+                    <h3 class="text-xl sm:text-2xl font-black text-slate-900 dark:text-white flex items-center gap-2">
+                        <i class="fa-solid fa-comments text-blue-500 animate-pulse"></i> 탐험대 한줄평 & 실시간 방명록
+                    </h3>
+                    <p class="text-xs text-slate-550 dark:text-slate-400 mt-1 font-bold leading-relaxed">
+                        김해를 다녀간 타지 방문객들과 활발히 이야기를 나눠보세요. 새로고침을 하거나 핸드폰으로 접속해도 작성 내역이 클라우드에 온전히 보존됩니다.
+                    </p>
+                </div>
+
+                <!-- 아바타 프로필 이모지 셀렉터 -->
+                <div class="space-y-2">
+                    <span class="block text-xs font-black text-slate-700 dark:text-slate-350">나만의 푸디 캐릭터 아이콘 선택:</span>
+                    <div class="flex gap-2.5">
+                        <button onclick="selectCommentEmoji('🍲')" id="emoji-🍲" class="emoji-btn text-2xl p-2 rounded-xl bg-blue-500/20 border-2 border-blue-500 hover:scale-105 active:scale-95 transition-all">🍲</button>
+                        <button onclick="selectCommentEmoji('🥣')" id="emoji-🥣" class="emoji-btn text-2xl p-2 rounded-xl bg-white/50 dark:bg-slate-900/40 border-2 border-transparent hover:border-slate-300 hover:scale-105 active:scale-95 transition-all">🥣</button>
+                        <button onclick="selectCommentEmoji('🔥')" id="emoji-🔥" class="emoji-btn text-2xl p-2 rounded-xl bg-white/50 dark:bg-slate-900/40 border-2 border-transparent hover:border-slate-300 hover:scale-105 active:scale-95 transition-all">🔥</button>
+                        <button onclick="selectCommentEmoji('😋')" id="emoji-😋" class="emoji-btn text-2xl p-2 rounded-xl bg-white/50 dark:bg-slate-900/40 border-2 border-transparent hover:border-slate-300 hover:scale-105 active:scale-95 transition-all">😋</button>
+                        <button onclick="selectCommentEmoji('✈️')" id="emoji-✈️" class="emoji-btn text-2xl p-2 rounded-xl bg-white/50 dark:bg-slate-900/40 border-2 border-transparent hover:border-slate-300 hover:scale-105 active:scale-95 transition-all">✈️</button>
+                    </div>
+                </div>
+
+                <!-- 메시지 입력 패널 -->
+                <div class="flex flex-col sm:flex-row gap-2.5">
+                    <input type="text" id="guestbook-name-input" placeholder="닉네임" class="sm:w-1/4 px-4 py-3.5 rounded-2xl bg-white/60 dark:bg-slate-950/60 text-slate-800 dark:text-slate-100 border border-slate-200/60 dark:border-slate-850 text-xs sm:text-sm font-black shadow-inner">
+                    <input type="text" id="guestbook-msg-input" placeholder="한줄평 메시지를 따뜻하게 남겨보세요..." class="flex-1 px-4 py-3.5 rounded-2xl bg-white/60 dark:bg-slate-950/60 text-slate-800 dark:text-slate-100 border border-slate-200/60 dark:border-slate-850 text-xs sm:text-sm font-bold shadow-inner">
+                    <button onclick="submitComment()" class="bg-blue-600 hover:bg-blue-700 active:scale-95 text-white font-black px-6 py-3.5 rounded-2xl transition-all text-xs sm:text-sm shadow-lg shadow-blue-500/20 shrink-0">
+                        글 쓰기
+                    </button>
+                </div>
+
+                <!-- 실시간 댓글 리스트 카드 영역 -->
+                <div class="relative min-h-[140px] max-h-[350px] overflow-y-auto bg-white/30 dark:bg-slate-950/20 p-4 border border-slate-200/50 dark:border-slate-850/60 rounded-2xl" id="guestbook-box">
+                    <div id="guestbook-loader" class="flex flex-col items-center justify-center py-10 text-slate-400 font-bold">
+                        <i class="fa-solid fa-spinner animate-spin text-2xl mb-1.5 text-blue-500"></i>
+                        <span class="text-xs">실시간 미식 방문 대장 동기화 중...</span>
+                    </div>
+                    
+                    <div id="guestbook-list" class="hidden space-y-3">
+                        <!-- 클라우드 / 로컬 데이터 동적 렌더링 구역 -->
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- 방문 꿀팁 가이드 섹션 -->
+        <section id="tips" class="py-10">
+            <div class="glass-panel rounded-3xl p-5 sm:p-8 shadow-xl space-y-6">
+                <div>
+                    <h3 class="text-xl sm:text-2xl font-black text-slate-900 dark:text-white flex items-center gap-2">
+                        <i class="fa-solid fa-circle-info text-blue-600 dark:text-blue-400"></i> 타지 방문객을 위한 김해 이용 꿀팁
+                    </h3>
+                    <p class="text-xs text-slate-550 dark:text-slate-400 mt-1 font-bold">김해를 효율적으로 유영하기 위해 알고 있어야 할 필수 정보입니다.</p>
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-4 font-bold text-xs">
+                    <!-- 팁 1 -->
+                    <div class="bg-white/40 dark:bg-slate-900/40 p-4.5 rounded-2xl border border-slate-200/40 dark:border-slate-850/40 space-y-2.5">
+                        <div class="flex items-center gap-2 text-blue-600 dark:text-blue-400">
+                            <i class="fa-solid fa-train-subway text-lg"></i>
+                            <span class="font-black text-slate-900 dark:text-white">김해경전철 최고 활용 동선</span>
+                        </div>
+                        <p class="text-slate-550 dark:text-slate-350 leading-relaxed font-semibold">
+                            김해공항 및 부산 사상역과 사통팔달 연결되는 부산김해경전철을 적극 이용해 보세요. 더도이 국밥집(박물관역 인근)과 춘천닭갈비(내외동 인근)는 대중교통으로 손쉽게 접근이 가능합니다.
+                        </p>
+                    </div>
+                    <!-- 팁 2 -->
+                    <div class="bg-white/40 dark:bg-slate-900/40 p-4.5 rounded-2xl border border-slate-200/40 dark:border-slate-850/40 space-y-2.5">
+                        <div class="flex items-center gap-2 text-green-600 dark:text-green-400">
+                            <i class="fa-solid fa-square-parking text-lg"></i>
+                            <span class="font-black text-slate-900 dark:text-white">주차 편의성 완벽 체크</span>
+                        </div>
+                        <p class="text-slate-550 dark:text-slate-350 leading-relaxed font-semibold">
+                            더도이 종가집 돼지국밥은 매장 앞에 수십 대가 댈 수 있는 압도적 전용 주차장이 특징입니다. 한편 내외동 및 장유 맛집들은 혼잡할 수 있으니 공영 주차장이나 골목 주차 팁을 확인하십시오.
+                        </p>
+                    </div>
+                    <!-- 팁 3 -->
+                    <div class="bg-white/40 dark:bg-slate-900/40 p-4.5 rounded-2xl border border-slate-200/40 dark:border-slate-850/40 space-y-2.5">
+                        <div class="flex items-center gap-2 text-purple-600 dark:text-purple-400">
+                            <i class="fa-solid fa-clock text-lg"></i>
+                            <span class="font-black text-slate-900 dark:text-white">웨이팅 피하기 골든타임</span>
+                        </div>
+                        <p class="text-slate-550 dark:text-slate-350 leading-relaxed font-semibold">
+                            춘천명물닭갈비는 현지인 저녁 외식으로 줄이 길 수 있어 오후 6시 전이나 주중 방문이 쾌적합니다. 국밥과 순대국은 24시간 연중 무휴 혹은 순환이 빨라 대기 걱정 없이 방문하셔도 편안합니다.
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
     </main>
 
-    <!-- 실시간 방명록 섹션 (Glassmorphism + Firebase) -->
-    <section id="guestbook" class="py-12 sm:py-20 max-w-4xl mx-auto px-4 w-full relative z-10">
-        <div class="glass-panel p-6 sm:p-10 rounded-3xl shadow-2xl transition-all duration-500 space-y-8">
-            <div class="text-center">
-                <span class="text-xs font-black text-blue-600 dark:text-blue-400 uppercase tracking-widest bg-blue-100/50 dark:bg-blue-950/40 px-3 py-1.5 rounded-md transition-colors duration-300 border border-blue-500/10">Live Guestbook</span>
-                <h2 class="text-2xl sm:text-3xl font-black text-slate-900 dark:text-white mt-3 transition-colors duration-300">🗣️ 김해 방문자 실시간 방명록</h2>
-                <p class="text-slate-600 dark:text-slate-400 mt-2 text-xs sm:text-sm font-semibold transition-colors duration-300">새로고침을 하거나 핸드폰으로 봐도 유지됩니다! 맛집 한줄평이나 후기를 실시간 공유해보세요.</p>
+    <!-- 레벨업 등급 상승 축하 팝업 모달창 (alert() 대용 프리미엄 UI) -->
+    <div id="tier-up-modal" class="hidden fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-md">
+        <div class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl p-6 sm:p-8 max-w-sm w-full text-center space-y-4 shadow-2xl relative animate-bounce-subtle">
+            <div class="text-6xl" id="modal-emoji">🏆</div>
+            <div class="space-y-1">
+                <span class="text-[10px] font-black uppercase tracking-widest text-blue-500">Tier Up Congratulation</span>
+                <h4 class="text-xl font-extrabold text-slate-950 dark:text-white" id="modal-title">미식가 등급 레벨업!</h4>
             </div>
-
-            <!-- 메시지 등록 폼 -->
-            <div class="bg-white/30 dark:bg-slate-950/30 p-4 sm:p-6 rounded-2xl border border-white/55 dark:border-white/5 space-y-4">
-                <!-- 아바타/프로필 선택 영역 -->
-                <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-white/20 dark:border-b-white/5 pb-4">
-                    <div class="flex items-center gap-2.5">
-                        <span class="text-sm font-black text-slate-700 dark:text-slate-300">프로필 이모지:</span>
-                        <div class="flex gap-1.5" id="emoji-picker">
-                            <button onclick="selectCommentEmoji('🍲')" class="emoji-btn text-2xl p-1 bg-white/80 dark:bg-slate-800 rounded-xl border-2 border-blue-500 active:scale-90 transition-all">🍲</button>
-                            <button onclick="selectCommentEmoji('🥣')" class="emoji-btn text-2xl p-1 bg-transparent rounded-xl border-2 border-transparent active:scale-90 transition-all">🥣</button>
-                            <button onclick="selectCommentEmoji('🔥')" class="emoji-btn text-2xl p-1 bg-transparent rounded-xl border-2 border-transparent active:scale-90 transition-all">🔥</button>
-                            <button onclick="selectCommentEmoji('😋')" class="emoji-btn text-2xl p-1 bg-transparent rounded-xl border-2 border-transparent active:scale-90 transition-all">😋</button>
-                            <button onclick="selectCommentEmoji('✈️')" class="emoji-btn text-2xl p-1 bg-transparent rounded-xl border-2 border-transparent active:scale-90 transition-all">✈️</button>
-                        </div>
-                    </div>
-                    <!-- 닉네임 입력 -->
-                    <input type="text" id="guest-nickname" placeholder="익명 닉네임 (기본값: 익명미식가)" class="px-3.5 py-2 rounded-xl bg-white/50 dark:bg-slate-900/50 text-slate-800 dark:text-slate-100 border border-white/40 dark:border-white/10 focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm font-bold w-full sm:w-56">
-                </div>
-
-                <!-- 메시지 텍스트 입력 및 버튼 -->
-                <div class="flex flex-col sm:flex-row gap-2">
-                    <input type="text" id="guest-message" maxlength="100" placeholder="방문 후기나 응원 메시지를 남겨주세요 (최대 100자)" class="flex-1 px-4 py-3 rounded-xl bg-white/50 dark:bg-slate-900/50 text-slate-850 dark:text-slate-100 border border-white/40 dark:border-white/10 focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm font-bold">
-                    <button id="comment-submit-btn" onclick="submitComment()" class="bg-blue-600 hover:bg-blue-700 active:scale-95 text-white font-black px-6 py-3 rounded-xl transition-all text-sm flex items-center justify-center gap-2 shadow-lg shadow-blue-500/15">
-                        <span>작성하기</span> <i class="fa-solid fa-pen-nib"></i>
-                    </button>
-                </div>
-            </div>
-
-            <!-- 실시간 댓글 리스트 피드 -->
-            <div id="comment-list" class="space-y-3 max-h-[500px] overflow-y-auto pr-1 no-scrollbar">
-                <!-- 로딩 표시기 -->
-                <div class="text-center py-10 text-slate-400 dark:text-slate-500 text-sm" id="comment-loading">
-                    <i class="fa-solid fa-circle-notch animate-spin text-3xl mb-2 text-blue-500"></i>
-                    <p class="font-bold text-slate-600 dark:text-slate-400">실시간 방명록 피드를 가져오는 중...</p>
-                </div>
-                <!-- 댓글 내용이 여기에 주입됨 -->
-            </div>
+            <p class="text-xs text-slate-600 dark:text-slate-400 font-bold" id="modal-desc">축하합니다! 이제 더 높은 김해 미식 등급에 도달하셨습니다.</p>
+            <button onclick="closeTierUpModal()" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-black py-3.5 rounded-2xl active:scale-95 transition-all text-xs">
+                성장 기록 유지하기 <i class="fa-solid fa-chevron-right ml-1"></i>
+            </button>
         </div>
-    </section>
-
-    <!-- 여행 정보 꿀팁 섹션 (카드 투명화 및 테두리 정렬) -->
-    <section id="tips" class="py-12 sm:py-20 max-w-5xl mx-auto px-4 w-full relative z-10">
-        <div class="text-center mb-8 sm:mb-12">
-            <span class="text-xs font-black text-blue-600 dark:text-blue-400 uppercase tracking-widest bg-blue-100/50 dark:bg-blue-950/40 px-3 py-1.5 rounded-md transition-colors duration-300 border border-blue-500/10">Travel Instructions</span>
-            <h2 class="text-2xl sm:text-3xl font-black text-slate-900 dark:text-white mt-3 transition-colors duration-300">타지 방문객이 알아두면 좋은 꿀팁</h2>
-            <p class="text-slate-600 dark:text-slate-400 mt-2 text-xs sm:text-sm font-bold transition-colors duration-300">김해의 낯선 지리를 가장 빠르게 마스터할 수 있는 알찬 가이드입니다.</p>
-        </div>
-
-        <div class="grid grid-cols-1 md:grid-cols-3 gap-5">
-            <div class="glass-panel p-6 rounded-2xl shadow-xl transition-all duration-300">
-                <div class="text-3xl mb-4">🚄</div>
-                <h4 class="font-black text-slate-900 dark:text-white text-base sm:text-lg mb-2">경전철 노선을 적극 활용하기</h4>
-                <p class="text-slate-700 dark:text-slate-350 text-xs sm:text-sm leading-relaxed font-bold">
-                    부산과 고속 연결되는 '부산김해경전철'은 정시성이 매우 훌륭합니다. 이 가이드에 소개된 대부분의 구역과 김해 주요 가야 명소를 논스톱으로 연결합니다.
-                </p>
-            </div>
-            <div class="glass-panel p-6 rounded-2xl shadow-xl transition-all duration-300">
-                <div class="text-3xl mb-4">🚗</div>
-                <h4 class="font-black text-slate-900 dark:text-white text-base sm:text-lg mb-2">넓고 풍성한 무료 주차 시설</h4>
-                <p class="text-slate-700 dark:text-slate-350 text-xs sm:text-sm leading-relaxed font-bold">
-                    추천된 맛집 3곳은 자차나 렌터카 주차 환경이 훌륭하게 완비되어 있거나 인근 골목 공영 노상 구획이 편리해 스트레스 없는 주차가 가능합니다.
-                </p>
-            </div>
-            <div class="glass-panel p-6 rounded-2xl shadow-xl transition-all duration-300">
-                <div class="text-3xl mb-4">⏰</div>
-                <h4 class="font-black text-slate-900 dark:text-white text-base sm:text-lg mb-2">오피스 회식 피크 타임 피하기</h4>
-                <p class="text-slate-700 dark:text-slate-350 text-xs sm:text-sm leading-relaxed font-bold">
-                    현지 근로자들에게도 워낙 인기가 자자한 가게들이라, 가급적 붐비는 평일 12시 정각 부근을 살짝 비켜 방문하시면 훨씬 쾌적한 안락미를 누릴 수 있습니다.
-                </p>
-            </div>
-        </div>
-    </section>
-
-    <!-- 토스트 알림창 -->
-    <div id="toast" class="fixed bottom-24 left-1/2 -translate-x-1/2 bg-slate-900/95 dark:bg-slate-800/95 text-white text-xs sm:text-sm font-black py-3 px-5 sm:px-6 rounded-2xl shadow-2xl opacity-0 translate-y-4 pointer-events-none transition-all duration-300 z-50 flex items-center gap-2">
-        <i class="fa-solid fa-circle-check text-emerald-400"></i>
-        <span id="toast-message">주소가 클립보드에 복사되었습니다!</span>
     </div>
 
-    <!-- 우측 하단 플로팅 컨트롤러 -->
-    <div class="fixed bottom-6 right-6 z-40 flex flex-col gap-2.5">
-        <a href="#guestbook" class="w-12 h-12 rounded-full bg-blue-600 text-white flex items-center justify-center shadow-lg active:scale-90 transition-all border border-blue-500 shadow-blue-500/20" aria-label="실시간 방명록 쓰기">
-            <span class="text-lg">✍️</span>
-        </a>
-        <button id="back-to-top" onclick="window.scrollTo({top:0, behavior:'smooth'})" class="w-12 h-12 rounded-full bg-slate-900/90 dark:bg-slate-850/90 text-white flex items-center justify-center shadow-lg active:scale-90 transition-all border border-slate-800 dark:border-slate-700 opacity-0 pointer-events-none duration-300" aria-label="맨위로 이동">
-            <i class="fa-solid fa-arrow-up text-lg"></i>
-        </button>
+    <!-- 범용 세련된 토스트(알림창) 컴포넌트 -->
+    <div id="toast" class="opacity-0 pointer-events-none fixed bottom-6 left-1/2 -translate-x-1/2 z-50 bg-slate-900/90 dark:bg-white/90 text-white dark:text-slate-950 px-5 py-3 rounded-2xl text-xs font-black shadow-2xl transition-all duration-300 flex items-center gap-2">
+        <i class="fa-solid fa-circle-check text-emerald-400"></i> <span id="toast-message">메시지 본문</span>
     </div>
 
-    <!-- 푸터 -->
-    <footer class="bg-slate-950 text-slate-400 py-12 border-t border-slate-900 text-center w-full px-4 relative z-10">
-        <div class="max-w-6xl mx-auto space-y-3 font-bold">
-            <p class="text-white font-black text-base sm:text-lg">김해 미식 가이드 ✈️</p>
-            <p class="text-xs text-slate-500 max-w-md mx-auto leading-relaxed">본 사이트는 최고 해상도 스마트폰 반응형에 100% 최적화되어 있으며, 구글 실시간 데이터와 연동되어 지능형 맞춤 먹방을 지원합니다.</p>
-            <p class="text-[10px] text-slate-650 font-medium">&copy; 2026 Gimhae Taste Top 3 & AI Concierge. All rights reserved.</p>
+    <!-- 모바일 미식 퀴즈 숏컷 퀵 플로팅 버튼 (스마트폰 한 손 조작 배려) -->
+    <a href="#selector" class="fixed bottom-6 right-5 z-40 bg-gradient-to-r from-blue-600 to-indigo-600 text-white w-12 h-12 rounded-full flex items-center justify-center shadow-2xl hover:scale-105 active:scale-95 transition-all" aria-label="맞춤 퀴즈 바로가기">
+        <i class="fa-solid fa-wand-magic-sparkles text-lg"></i>
+    </a>
+
+    <!-- 글로벌 푸터 영역 -->
+    <footer class="bg-slate-950 text-slate-400 py-12 border-t border-slate-900 text-center relative z-10 w-full px-4">
+        <div class="max-w-4xl mx-auto space-y-3 font-bold text-xs">
+            <p class="text-white font-black text-sm">김해 미식 가이드 ✈️</p>
+            <p class="text-[10px] text-slate-500 max-w-sm mx-auto leading-relaxed">
+                본 사이트는 스마트폰 및 반응형 디스플레이 해상도에 100% 최적화되어 있으며, 구글 AI 데이터 가이드라인을 기반으로 지능형 먹방 코스를 동적 제공합니다.
+            </p>
+            <p class="text-[10px] text-slate-600 font-medium">&copy; 2026 Gimhae Gastronomy & AI Concierge. All rights reserved.</p>
         </div>
     </footer>
 
-    <!-- 스크립트 영역 (ES Modules & 글로벌 노출) -->
+    <!-- 모듈 스크립트 작성 (안정성을 위해 내부의 모든 주석을 자바스크립트 표준 주석 //, /* */ 으로 구현하여 SyntaxError 철저 격리) -->
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
-        import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
-        import { getFirestore, doc, addDoc, onSnapshot, collection, query, deleteDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+        import { getAuth, signInAnonymously, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { getFirestore, addDoc, onSnapshot, collection, query, deleteDoc, doc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
         /* -------------------------------------------------------------
-         * 1. 전역 상태 및 파티클 엔진 설정
+         * 1. 파티클 엔진 및 전역 상태 셋업
          * ------------------------------------------------------------- */
         const canvas = document.getElementById('particle-canvas');
         const ctx = canvas.getContext('2d');
-        let particles = [];
-        let animationFrameId;
-
-        let mouse = {
-            x: null,
-            y: null,
-            radius: 150
-        };
-
-        // 방명록 관련 임시 로컬/세션 고유 사용자 아이디
-        let myGuestUserId = null;
-        let selectedEmoji = "🍲"; // 기본 선택 이모지
-
-        // 퀴즈 결과 DB 정의
-        const quizResults = {
-            'soup-heavy': {
-                emoji: '🍲',
-                name: '더도이 종가집 돼지국밥',
-                desc: '맑고 고소함이 탁월한 육수와 푸짐하게 썰어 넣은 돼지고기가 피로를 완벽하게 날려줍니다. 국밥 애호가들조차 단골로 사로잡은 진국 명당!',
-                link: '#restaurant-dedoi'
-            },
-            'clean-warm': {
-                emoji: '🥣',
-                name: '무봉리토종순대국',
-                desc: '가마솥에서 연신 우려내는 은은하고 전통 깊은 토종 순대국밥의 기품. 갓 무쳐내 입에 아삭거리는 매콤 달큰 겉절이와 완벽한 조화를 보장합니다.',
-                link: '#restaurant-mubong'
-            },
-            'spicy-energy': {
-                emoji: '🔥',
-                name: '춘천명물닭갈비',
-                desc: '풍성한 순살 야채와 매콤달콤한 소스가 만나 입안 가득 감칠맛을 폭발시키는 닭갈비 명가. 치즈 사리와 화룡점정의 무쇠 볶음밥은 필수 코스입니다!',
-                link: '#restaurant-dakgalbi'
-            }
-        };
-
-        /* -------------------------------------------------------------
-         * 2. Firebase & Firestore 연동 (방명록)
-         * ------------------------------------------------------------- */
-        let db = null;
-        let auth = null;
-        let isFirebaseActive = false;
         
-        // 목업 데이터 (오프라인 모드용)
-        let mockComments = [
-            { id: "mock1", emoji: "🍲", nickname: "김해국밥러", message: "더도이 수백(수육백반) 진짜 부드럽고 든든하네요! 공항 가기 전에 매번 들릅니다.", createdAt: Date.now() - 3600000, userId: "mockUser1" },
-            { id: "mock2", emoji: "🔥", nickname: "닭갈비매니아", message: "춘천명물닭갈비 치즈사리 추가 꼭 하세요! 볶음밥까지 긁어먹었네요 ㅎㅎ", createdAt: Date.now() - 7200000, userId: "mockUser2" },
-            { id: "mock3", emoji: "🥣", nickname: "토종입맛", message: "무봉리는 역시 김치가 하드캐리합니다. 국물 담백하고 속이 아주 편해요.", createdAt: Date.now() - 10800000, userId: "mockUser3" }
-        ];
+        let particles = [];
+        let mouse = { x: null, y: null, radius: 100 };
+        let isDarkMode = false;
 
-        const appId = typeof __app_id !== 'undefined' ? __app_id : 'gimhae-taste-app-v1';
-        const rawFirebaseConfig = typeof __firebase_config !== 'undefined' ? __firebase_config : null;
-
-        async function setupFirebase() {
-            if (!rawFirebaseConfig) {
-                console.warn("Firebase config not available. Running in offline mock mode.");
-                initOfflineGuestbook();
-                return;
-            }
-
-            try {
-                const firebaseConfig = JSON.parse(rawFirebaseConfig);
-                const app = initializeApp(firebaseConfig);
-                db = getFirestore(app);
-                auth = getAuth(app);
-                
-                // RULE 3 - Auth Before Queries
-                let user;
-                if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
-                    const userCredential = await signInWithCustomToken(auth, __initial_auth_token);
-                    user = userCredential.user;
-                } else {
-                    const userCredential = await signInAnonymously(auth);
-                    user = userCredential.user;
-                }
-
-                if (user) {
-                    myGuestUserId = user.uid;
-                    isFirebaseActive = true;
-                    initOnlineGuestbook();
-                } else {
-                    initOfflineGuestbook();
-                }
-            } catch (err) {
-                console.error("Firebase initialization failed:", err);
-                initOfflineGuestbook();
-            }
-        }
-
-        // 온라인 Firestore 실시간 연결 (RULE 1, 2 만족)
-        function initOnlineGuestbook() {
-            // RULE 1 - Strict Paths: public data
-            const commentsCollection = collection(db, 'artifacts', appId, 'public', 'data', 'comments');
-            // RULE 2 - No Complex Queries: fetch all, sort in memory
-            const q = query(commentsCollection);
-
-            onSnapshot(q, (snapshot) => {
-                const comments = [];
-                snapshot.forEach((doc) => {
-                    comments.push({ id: doc.id, ...doc.data() });
-                });
-                
-                // 메모리상에서 내림차순 정렬 (최신 댓글이 맨 위로)
-                comments.sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0));
-                
-                renderComments(comments);
-            }, (error) => {
-                console.error("Firestore onSnapshot error:", error);
-                initOfflineGuestbook(); // 에러 발생 시 로컬 목업으로 전환하여 정지 방지
-            });
-        }
-
-        // 오프라인 기동 시 (목업 모드)
-        function initOfflineGuestbook() {
-            myGuestUserId = "localOfflineUser";
-            renderComments(mockComments);
-        }
-
-        // 실시간 댓글 렌더링 함수
-        function renderComments(commentsList) {
-            const container = document.getElementById('comment-list');
-            const loadingIndicator = document.getElementById('comment-loading');
-            if (loadingIndicator) loadingIndicator.classList.add('hidden');
-
-            if (commentsList.length === 0) {
-                container.innerHTML = `
-                    <div class="text-center py-10 text-slate-400 dark:text-slate-500 text-sm">
-                        <i class="fa-regular fa-comment-dots text-4xl mb-2 text-slate-300"></i>
-                        <p class="font-bold">첫 번째로 방명록 메시지를 남겨보세요!</p>
-                    </div>
-                `;
-                return;
-            }
-
-            container.innerHTML = commentsList.map(item => {
-                const isMyComment = item.userId === myGuestUserId;
-                const formattedTime = formatTimeDiff(item.createdAt);
-                
-                return `
-                    <div class="flex items-start gap-3 bg-white/50 dark:bg-slate-900/40 backdrop-blur-md p-3.5 sm:p-4 rounded-2xl border border-white/40 dark:border-white/5 hover:border-blue-500/20 transition-all duration-300 group">
-                        <div class="text-3xl bg-white/80 dark:bg-slate-800 p-2 rounded-xl shadow-inner select-none flex-shrink-0">
-                            ${escapeHtml(item.emoji || "🍲")}
-                        </div>
-                        <div class="flex-1 space-y-1 min-w-0">
-                            <div class="flex items-center justify-between">
-                                <div class="flex items-center gap-2">
-                                    <span class="font-black text-slate-800 dark:text-slate-200 text-sm">${escapeHtml(item.nickname || "익명미식가")}</span>
-                                    ${isMyComment ? `<span class="bg-blue-100 text-blue-700 dark:bg-blue-950/40 dark:text-blue-300 text-[9px] font-black px-1.5 py-0.5 rounded-full border border-blue-500/10">내 글</span>` : ''}
-                                </div>
-                                <div class="flex items-center gap-2.5">
-                                    <span class="text-[10px] text-slate-400 dark:text-slate-500 font-bold">${formattedTime}</span>
-                                    ${isMyComment ? `
-                                        <button onclick="deleteComment('${item.id}')" class="text-slate-400 hover:text-red-500 transition-colors py-0.5 px-1.5 rounded-md hover:bg-red-50 dark:hover:bg-red-950/20 text-xs" title="삭제하기">
-                                            <i class="fa-regular fa-trash-can"></i>
-                                        </button>
-                                    ` : ''}
-                                </div>
-                            </div>
-                            <p class="text-slate-700 dark:text-slate-300 text-xs sm:text-sm leading-relaxed font-semibold break-words">${escapeHtml(item.message)}</p>
-                        </div>
-                    </div>
-                `;
-            }).join('');
-        }
-
-        // 댓글 등록 처리
-        async function submitComment() {
-            const nicknameInput = document.getElementById('guest-nickname');
-            const messageInput = document.getElementById('guest-message');
-            
-            const nickname = nicknameInput.value.trim() || "익명미식가";
-            const message = messageInput.value.trim();
-
-            if (!message) {
-                showToast("⚠️ 한 줄 메시지를 입력해 주세요!");
-                return;
-            }
-
-            const newComment = {
-                emoji: selectedEmoji,
-                nickname: nickname,
-                message: message,
-                createdAt: Date.now(),
-                userId: myGuestUserId
-            };
-
-            const submitBtn = document.getElementById('comment-submit-btn');
-            submitBtn.disabled = true;
-            submitBtn.innerHTML = `<i class="fa-solid fa-spinner animate-spin"></i>`;
-
-            try {
-                if (isFirebaseActive && db) {
-                    const commentsCollection = collection(db, 'artifacts', appId, 'public', 'data', 'comments');
-                    await addDoc(commentsCollection, newComment);
-                } else {
-                    // 오프라인 Mock 데이터 추가
-                    newComment.id = "mock_" + Date.now();
-                    mockComments.unshift(newComment);
-                    renderComments(mockComments);
-                }
-
-                messageInput.value = "";
-                showToast("🎉 맛있는 맛집 토크가 실시간으로 공유되었습니다!");
-            } catch (err) {
-                console.error("댓글 등록 실패:", err);
-                showToast("⚠️ 댓글 저장 중 실패했습니다.");
-            } finally {
-                submitBtn.disabled = false;
-                submitBtn.innerHTML = `<span>작성하기</span> <i class="fa-solid fa-pen-nib"></i>`;
-            }
-        }
-
-        // 댓글 삭제 처리
-        async function deleteComment(id) {
-            if (isFirebaseActive && db) {
-                try {
-                    const commentDoc = doc(db, 'artifacts', appId, 'public', 'data', 'comments', id);
-                    await deleteDoc(commentDoc);
-                    showToast("🗑️ 작성하신 한줄평이 안전하게 삭제되었습니다.");
-                } catch (err) {
-                    console.error("댓글 삭제 오류:", err);
-                    showToast("⚠️ 삭제 권한이 없거나 오류가 발생했습니다.");
-                }
-            } else {
-                // 오프라인 Mock 데이터 삭제
-                mockComments = mockComments.filter(item => item.id !== id);
-                renderComments(mockComments);
-                showToast("🗑️ 모의 방명록이 임시 삭제되었습니다.");
-            }
-        }
-
-        // 이모지 선택 가시성 교체
-        function selectCommentEmoji(emoji) {
-            selectedEmoji = emoji;
-            const buttons = document.querySelectorAll('#emoji-picker button');
-            buttons.forEach(btn => {
-                if (btn.innerText === emoji) {
-                    btn.className = "emoji-btn text-2xl p-1 bg-white/80 dark:bg-slate-800 rounded-xl border-2 border-blue-500 active:scale-90 transition-all";
-                } else {
-                    btn.className = "emoji-btn text-2xl p-1 bg-transparent rounded-xl border-2 border-transparent active:scale-90 transition-all";
-                }
-            });
-        }
-
-        // 시간차 텍스트 계산 도우미
-        function formatTimeDiff(timestamp) {
-            if (!timestamp) return "방금 전";
-            const diff = Date.now() - timestamp;
-            const seconds = Math.floor(diff / 1000);
-            const minutes = Math.floor(seconds / 60);
-            const hours = Math.floor(minutes / 60);
-            const days = Math.floor(hours / 24);
-
-            if (seconds < 60) return "방금 전";
-            if (minutes < 60) return `${minutes}분 전`;
-            if (hours < 24) return `${hours}시간 전`;
-            return `${days}일 전`;
-        }
-
-        // XSS 유해 스크립트 해독기
-        function escapeHtml(str) {
-            if (!str) return '';
-            return str
-                .replace(/&/g, "&amp;")
-                .replace(/</g, "&lt;")
-                .replace(/>/g, "&gt;")
-                .replace(/"/g, "&quot;")
-                .replace(/'/g, "&#039;");
-        }
-
-
-        /* -------------------------------------------------------------
-         * 3. 고선명 인터랙티브 컨스텔레이션(신경망 성운) 엔진
-         * ------------------------------------------------------------- */
+        /* 해상도 대응 캔버스 리사이징 */
         function resizeCanvas() {
             canvas.width = window.innerWidth;
             canvas.height = window.innerHeight;
             initParticles();
         }
 
-        class Particle {
-            constructor() {
-                this.x = Math.random() * canvas.width;
-                this.y = Math.random() * canvas.height;
-                this.size = Math.random() * 4 + 2; 
-                this.speedX = (Math.random() - 0.5) * 1.0; 
-                this.speedY = (Math.random() - 0.5) * 1.0;
-                this.alpha = Math.random() * 0.55 + 0.35; 
-                this.baseAlpha = this.alpha;
-            }
-
-            update() {
-                this.x += this.speedX;
-                this.y += this.speedY;
-
-                if (this.x < 0) this.x = canvas.width;
-                if (this.x > canvas.width) this.x = 0;
-                if (this.y < 0) this.y = canvas.height;
-                if (this.y > canvas.height) this.y = 0;
-
-                if (mouse.x !== null && mouse.y !== null) {
-                    let dx = mouse.x - this.x;
-                    let dy = mouse.y - this.y;
-                    let distance = Math.sqrt(dx * dx + dy * dy);
-                    
-                    if (distance < mouse.radius) {
-                        const force = (mouse.radius - distance) / mouse.radius;
-                        const forceX = (dx / distance) * force * 2.0;
-                        const forceY = (dy / distance) * force * 2.0;
-                        
-                        this.x -= forceX;
-                        this.y -= forceY;
-                        this.alpha = Math.min(this.baseAlpha * 2, 0.95);
-                    } else {
-                        if (this.alpha > this.baseAlpha) {
-                            this.alpha -= 0.01;
-                        }
-                    }
-                }
-            }
-
-            draw() {
-                const isDark = document.documentElement.classList.contains('dark');
-                if (isDark) {
-                    ctx.fillStyle = `rgba(165, 243, 252, ${this.alpha})`;
-                } else {
-                    ctx.fillStyle = `rgba(37, 99, 235, ${this.alpha * 0.8})`;
-                }
-                ctx.beginPath();
-                ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
-                ctx.fill();
-            }
-        }
-
+        /* 반응형 파티클 배열 생성 */
         function initParticles() {
             particles = [];
-            const count = Math.min(Math.floor((canvas.width * canvas.height) / 12000), 120);
+            const count = Math.min(Math.floor((canvas.width * canvas.height) / 9000), 100);
             for (let i = 0; i < count; i++) {
-                particles.push(new Particle());
+                particles.push({
+                    x: Math.random() * canvas.width,
+                    y: Math.random() * canvas.height,
+                    vx: (Math.random() - 0.5) * 0.9,
+                    vy: (Math.random() - 0.5) * 0.9,
+                    radius: Math.random() * 4 + 1.5
+                });
             }
         }
 
+        /* 파티클 프레임 연산 및 격자선 연결 애니메이션 */
         function animateParticles() {
             ctx.clearRect(0, 0, canvas.width, canvas.height);
-            const isDark = document.documentElement.classList.contains('dark');
-            
+            const lineColor = isDarkMode ? 'rgba(99, 102, 241, 0.28)' : 'rgba(59, 130, 246, 0.22)';
+            const particleColor = isDarkMode ? 'rgba(129, 140, 248, 0.85)' : 'rgba(59, 130, 246, 0.75)';
+
             for (let i = 0; i < particles.length; i++) {
-                particles[i].update();
-                particles[i].draw();
-                
-                for (let j = i + 1; j < particles.length; j++) {
-                    let dx = particles[i].x - particles[j].x;
-                    let dy = particles[i].y - particles[j].y;
+                let p = particles[i];
+                p.x += p.vx;
+                p.y += p.vy;
+
+                /* 경계벽 충돌 보정 */
+                if (p.x < 0 || p.x > canvas.width) p.vx *= -1;
+                if (p.y < 0 || p.y > canvas.height) p.vy *= -1;
+
+                /* 도트 출력 */
+                ctx.beginPath();
+                ctx.arc(p.x, p.y, p.radius, 0, Math.PI * 2);
+                ctx.fillStyle = particleColor;
+                ctx.fill();
+
+                /* 마우스 포인터 근처 척력 작용 */
+                if (mouse.x !== null) {
+                    let dx = p.x - mouse.x;
+                    let dy = p.y - mouse.y;
                     let dist = Math.sqrt(dx * dx + dy * dy);
-                    
-                    if (dist < 110) { 
-                        let lineAlpha = (110 - dist) / 110 * 0.45; 
-                        ctx.lineWidth = 1.2;
-                        if (isDark) {
-                            ctx.strokeStyle = `rgba(165, 243, 252, ${lineAlpha})`;
-                        } else {
-                            ctx.strokeStyle = `rgba(37, 99, 235, ${lineAlpha})`;
-                        }
-                        ctx.beginPath();
-                        ctx.moveTo(particles[i].x, particles[i].y);
-                        ctx.lineTo(particles[j].x, particles[j].y);
-                        ctx.stroke();
+                    if (dist < mouse.radius) {
+                        let force = (mouse.radius - dist) / mouse.radius;
+                        p.x += (dx / dist) * force * 2;
+                        p.y += (dy / dist) * force * 2;
                     }
                 }
-                
-                if (mouse.x !== null && mouse.y !== null) {
-                    let mDx = particles[i].x - mouse.x;
-                    let mDy = particles[i].y - mouse.y;
-                    let mDist = Math.sqrt(mDx * mDx + mDy * mDy);
-                    if (mDist < mouse.radius) {
-                        let cursorLineAlpha = (mouse.radius - mDist) / mouse.radius * 0.65;
-                        ctx.lineWidth = 1.6;
-                        if (isDark) {
-                            ctx.strokeStyle = `rgba(96, 165, 250, ${cursorLineAlpha})`;
-                        } else {
-                            ctx.strokeStyle = `rgba(29, 78, 216, ${cursorLineAlpha})`;
-                        }
+
+                /* 성운 신경망 노드 그리드 연결선 렌더링 */
+                for (let j = i + 1; j < particles.length; j++) {
+                    let p2 = particles[j];
+                    let dx = p.x - p2.x;
+                    let dy = p.y - p2.y;
+                    let distance = Math.sqrt(dx * dx + dy * dy);
+
+                    if (distance < 140) {
                         ctx.beginPath();
-                        ctx.moveTo(particles[i].x, particles[i].y);
-                        ctx.lineTo(mouse.x, mouse.y);
+                        ctx.moveTo(p.x, p.y);
+                        ctx.lineTo(p2.x, p2.y);
+                        ctx.strokeStyle = lineColor;
+                        ctx.lineWidth = (140 - distance) / 100;
                         ctx.stroke();
                     }
                 }
             }
-            animationFrameId = requestAnimationFrame(animateParticles);
+            requestAnimationFrame(animateParticles);
         }
 
+        /* -------------------------------------------------------------
+         * 2. 게이미피케이션 핵심 로직 및 포인트 관리 엔진
+         * ------------------------------------------------------------- */
+        const QUEST_XP = {
+            quiz: 25,       /* q1: 퀴즈 완수 */
+            copy: 15,       /* q2: 주소 복사 */
+            map: 20,        /* q3: 네이버 맵 연결 */
+            ai: 25,         /* q4: AI 챗봇 이용 */
+            comment: 35,    /* q5: 댓글 작성 */
+            scroll: 30,     /* q6: 100% 스크롤 달성 */
+            tts: 20,        /* q7: AI 오디오 가이드 재생 */
+            postcard: 30    /* q8: AI 기념 엽서 발행 */
+        };
+
+        const TIER_THRESHOLDS = [
+            { xp: 0, title: '새내기 미식가 🥉', label: 'Bronze', emoji: '🥉', percent: '상위 90%' },
+            { xp: 50, title: '골목 탐정 🥈', label: 'Silver', emoji: '🥈', percent: '상위 60%' },
+            { xp: 100, title: '김해 미식 장인 🥇', label: 'Gold', emoji: '🥇', percent: '상위 25%' },
+            { xp: 160, title: '전설의 식객 👑', label: 'Master', emoji: '👑', percent: '상위 1%' }
+        ];
+
+        let gamificationState = {
+            totalXP: 0,
+            completedQuests: {
+                quiz: false,
+                copy: false,
+                map: false,
+                ai: false,
+                comment: false,
+                scroll: false,
+                tts: false,
+                postcard: false
+            }
+        };
+
+        /* 로컬 스토리지에 세이브 데이터 로드 및 저장 */
+        function loadGamificationState() {
+            const saved = localStorage.getItem('gimhae_gourmet_quest_v2');
+            if (saved) {
+                try {
+                    gamificationState = JSON.parse(saved);
+                } catch (e) {
+                    console.error("게이미피케이션 상태 파싱 실패", e);
+                }
+            }
+            updateDashboardUI();
+        }
+
+        function saveGamificationState() {
+            localStorage.setItem('gimhae_gourmet_quest_v2', JSON.stringify(gamificationState));
+        }
+
+        /* 포인트 지급 및 퀘스트 완수 핸들러 */
+        function completeQuest(questKey) {
+            if (gamificationState.completedQuests[questKey]) return;
+            
+            const xpAwarded = QUEST_XP[questKey];
+            const oldXP = gamificationState.totalXP;
+            
+            gamificationState.completedQuests[questKey] = true;
+            gamificationState.totalXP += xpAwarded;
+            
+            saveGamificationState();
+            showToast(`⭐ 퀘스트 완료! +${xpAwarded} XP 획득`);
+            
+            const oldTier = getTierByXP(oldXP);
+            const newTier = getTierByXP(gamificationState.totalXP);
+            
+            updateDashboardUI();
+
+            if (oldTier.title !== newTier.title) {
+                triggerTierUpModal(newTier);
+            }
+        }
+
+        function getTierByXP(xp) {
+            let currentTier = TIER_THRESHOLDS[0];
+            for (let i = 0; i < TIER_THRESHOLDS.length; i++) {
+                if (xp >= TIER_THRESHOLDS[i].xp) {
+                    currentTier = TIER_THRESHOLDS[i];
+                }
+            }
+            return currentTier;
+        }
+
+        /* 대시보드 UI 실시간 업데이트 */
+        function updateDashboardUI() {
+            const currentXP = gamificationState.totalXP;
+            const currentTier = getTierByXP(currentXP);
+            const nextTierIndex = TIER_THRESHOLDS.findIndex(t => t.xp === currentTier.xp) + 1;
+            
+            let progressPercent = 0;
+            if (nextTierIndex < TIER_THRESHOLDS.length) {
+                const nextTier = TIER_THRESHOLDS[nextTierIndex];
+                const range = nextTier.xp - currentTier.xp;
+                const earned = currentXP - currentTier.xp;
+                progressPercent = Math.min(Math.floor((earned / range) * 100), 100);
+            } else {
+                progressPercent = 100;
+            }
+
+            document.getElementById('current-xp').innerText = currentXP;
+            document.getElementById('tier-title').innerText = `${currentTier.title} (${currentTier.label})`;
+            document.getElementById('tier-badge').innerText = currentTier.emoji;
+            document.getElementById('tier-percent-badge').innerText = currentTier.percent;
+            document.getElementById('growth-percent-text').innerText = `${progressPercent}% 완료`;
+            document.getElementById('tier-progress-bar').style.width = `${progressPercent}%`;
+
+            let completedCount = 0;
+            const keys = Object.keys(gamificationState.completedQuests);
+            keys.forEach((key, index) => {
+                const chkBox = document.getElementById(`q${index+1}-chk`);
+                if (gamificationState.completedQuests[key]) {
+                    completedCount++;
+                    if (chkBox) {
+                        chkBox.innerHTML = `<i class="fa-solid fa-circle-check text-blue-600 dark:text-blue-400"></i>`;
+                        chkBox.className = "w-5 h-5 rounded-md border-0 flex items-center justify-center text-xs shrink-0 bg-white dark:bg-slate-800";
+                    }
+                } else {
+                    if (chkBox) {
+                        chkBox.innerHTML = `<i class="fa-solid fa-check text-slate-350 dark:text-slate-600"></i>`;
+                        chkBox.className = "w-5 h-5 rounded-md border border-slate-300 dark:border-slate-700 flex items-center justify-center text-xs shrink-0 bg-white/50 dark:bg-slate-900/40";
+                    }
+                }
+            });
+
+            document.getElementById('quest-count').innerText = `${completedCount} / ${keys.length}`;
+
+            const rewardEl = document.getElementById('reward-status');
+            if (completedCount === keys.length) {
+                rewardEl.innerText = "👑 명예 마스터 보상 달성!";
+                rewardEl.className = "block text-[10px] text-emerald-500 font-black animate-pulse";
+            } else {
+                rewardEl.innerText = "대기 중";
+                rewardEl.className = "block text-[10px] text-amber-500 font-bold";
+            }
+        }
+
+        /* 등급 도달 레벨업 축하 모달 출현 */
+        function triggerTierUpModal(tier) {
+            document.getElementById('modal-emoji').innerText = tier.emoji;
+            document.getElementById('modal-title').innerText = `${tier.title} 달성!`;
+            document.getElementById('modal-desc').innerText = `축하합니다! 맛집 탐험 실력을 인정받아 '${tier.label}' 멤버로 전격 격상되었습니다.`;
+            document.getElementById('tier-up-modal').classList.remove('hidden');
+        }
+
+        function closeTierUpModal() {
+            document.getElementById('tier-up-modal').classList.add('hidden');
+        }
+
+        /* -------------------------------------------------------------
+         * 3. 테마 컨트롤러 (라이트/다크 전역 전환 기능)
+         * ------------------------------------------------------------- */
+        function initTheme() {
+            const savedTheme = localStorage.getItem('gimhae_restaurants_theme');
+            const systemTheme = window.matchMedia('(prefers-color-scheme: dark)').matches;
+            if (savedTheme === 'dark' || (!savedTheme && systemTheme)) {
+                document.documentElement.classList.add('dark');
+                isDarkMode = true;
+            } else {
+                document.documentElement.classList.remove('dark');
+                isDarkMode = false;
+            }
+            updateThemeUI();
+        }
+
+        function toggleTheme() {
+            if (document.documentElement.classList.contains('dark')) {
+                document.documentElement.classList.remove('dark');
+                localStorage.setItem('gimhae_restaurants_theme', 'light');
+                isDarkMode = false;
+                showToast("☀️ 라이트 모드로 전환되었습니다.");
+            } else {
+                document.documentElement.classList.add('dark');
+                localStorage.setItem('gimhae_restaurants_theme', 'dark');
+                isDarkMode = true;
+                showToast("🌙 다크 모드로 전환되었습니다.");
+            }
+            updateThemeUI();
+        }
+
+        function updateThemeUI() {
+            const textEl = document.getElementById('theme-text');
+            const iconEl = document.getElementById('theme-icon');
+            if (isDarkMode) {
+                textEl.innerText = "다크 모드";
+                iconEl.className = "fa-solid fa-moon";
+            } else {
+                textEl.innerText = "라이트 모드";
+                iconEl.className = "fa-solid fa-sun";
+            }
+        }
+
+        /* -------------------------------------------------------------
+         * 4. UI 헬퍼 모듈 (토스트, 햄버거 토글, 복사 등)
+         * ------------------------------------------------------------- */
+        function toggleMobileMenu() {
+            const menu = document.getElementById('mobile-menu');
+            const icon = document.getElementById('menu-icon');
+            if (menu.classList.contains('hidden')) {
+                menu.classList.remove('hidden');
+                icon.className = "fa-solid fa-xmark";
+            } else {
+                menu.classList.add('hidden');
+                icon.className = "fa-solid fa-bars";
+            }
+        }
+
+        function closeMobileMenu() {
+            document.getElementById('mobile-menu').classList.add('hidden');
+            document.getElementById('menu-icon').className = "fa-solid fa-bars";
+        }
+
+        function showToast(message) {
+            const toast = document.getElementById('toast');
+            document.getElementById('toast-message').innerText = message;
+            toast.className = "fixed bottom-6 left-1/2 -translate-x-1/2 z-50 bg-slate-900/90 dark:bg-white/90 text-white dark:text-slate-950 px-5 py-3 rounded-2xl text-xs font-black shadow-2xl transition-all duration-300 flex items-center gap-2 opacity-100 transform translate-y-0 scale-100";
+            
+            setTimeout(() => {
+                toast.className = "opacity-0 pointer-events-none fixed bottom-6 left-1/2 -translate-x-1/2 z-50 bg-slate-900/90 dark:bg-white/90 text-white dark:text-slate-950 px-5 py-3 rounded-2xl text-xs font-black shadow-2xl transition-all duration-300 flex items-center gap-2 transform translate-y-2 scale-95";
+            }, 3000);
+        }
+
+        function copyToClipboard(text, id) {
+            const input = document.createElement('textarea');
+            input.value = text;
+            document.body.appendChild(input);
+            input.select();
+            document.execCommand('copy');
+            document.body.removeChild(input);
+
+            showToast("📋 주소가 클립보드에 성공적으로 복사되었습니다!");
+            completeQuest('copy');
+
+            const copyIcon = document.getElementById(`copy-icon-${id}`);
+            if (copyIcon) {
+                copyIcon.className = "fa-solid fa-check text-blue-500";
+                setTimeout(() => {
+                    copyIcon.className = "fa-regular fa-copy text-xs text-slate-600 dark:text-slate-300";
+                }, 2000);
+            }
+        }
+
+        function toggleQuestBoard() {
+            const board = document.getElementById('quest-board-list');
+            const chevron = document.getElementById('quest-chevron');
+            if (board.classList.contains('hidden')) {
+                board.classList.remove('hidden');
+                chevron.classList.add('rotate-180');
+            } else {
+                board.classList.add('hidden');
+                chevron.classList.remove('rotate-180');
+            }
+        }
+
+        function trackMapClick() {
+            completeQuest('map');
+        }
+
+        /* -------------------------------------------------------------
+         * 5. AI 실시간 미식 컨시어지 (Gemini & Imagen & TTS 인터페이스)
+         * ------------------------------------------------------------- */
+        let currentAITextResponse = "";
+        let cachedAudioUrl = null;
+        let isAudioPlaying = false;
+
+        function switchSelectorTab(tab) {
+            const tabAi = document.getElementById('tab-ai');
+            const tabPostcard = document.getElementById('tab-postcard');
+            const tabQuiz = document.getElementById('tab-quiz');
+            
+            const panelAi = document.getElementById('panel-ai');
+            const panelPostcard = document.getElementById('panel-postcard');
+            const panelQuiz = document.getElementById('panel-quiz');
+
+            [tabAi, tabPostcard, tabQuiz].forEach(el => {
+                if (el) el.className = "flex-1 py-5 text-center font-black text-xs sm:text-sm border-b-2 border-transparent text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200 transition-all flex items-center justify-center gap-2";
+            });
+            [panelAi, panelPostcard, panelQuiz].forEach(el => {
+                if (el) el.classList.add('hidden');
+            });
+
+            if (tab === 'ai') {
+                tabAi.className = "flex-1 py-5 text-center font-black text-xs sm:text-sm border-b-2 border-blue-600 dark:border-blue-400 text-blue-600 dark:text-blue-400 transition-all flex items-center justify-center gap-2";
+                panelAi.classList.remove('hidden');
+            } else if (tab === 'postcard') {
+                tabPostcard.className = "flex-1 py-5 text-center font-black text-xs sm:text-sm border-b-2 border-purple-600 dark:border-purple-400 text-purple-600 dark:text-purple-400 transition-all flex items-center justify-center gap-2";
+                panelPostcard.classList.remove('hidden');
+            } else {
+                tabQuiz.className = "flex-1 py-5 text-center font-black text-xs sm:text-sm border-b-2 border-indigo-600 dark:border-indigo-400 text-indigo-600 dark:text-indigo-400 transition-all flex items-center justify-center gap-2";
+                panelQuiz.classList.remove('hidden');
+            }
+        }
+
+        function fillAIQuery(queryText) {
+            document.getElementById('ai-query-input').value = queryText;
+            sendQueryToAI();
+        }
+
+        function fillPostcardQuery(queryText) {
+            document.getElementById('postcard-query-input').value = queryText;
+            generatePostcard();
+        }
+
+        /* 마크다운을 유려한 프리미엄 컴포넌트로 파싱 */
+        function parseMarkdown(mdText) {
+            if (!mdText) return "";
+            let text = mdText;
+            
+            text = text.replace(/^### (.*$)/gim, '<h5 class="text-sm font-black text-slate-900 dark:text-white mt-3 mb-1.5"><i class="fa-solid fa-angles-right text-xs text-blue-500 mr-1"></i> $1</h5>');
+            text = text.replace(/^## (.*$)/gim, '<h4 class="text-base font-black text-slate-900 dark:text-white mt-4 mb-2">$1</h4>');
+            text = text.replace(/^# (.*$)/gim, '<h3 class="text-lg font-black text-slate-900 dark:text-white mt-5 mb-3">$1</h3>');
+            text = text.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
+            text = text.replace(/^\s*[\-\*]\s+(.*)$/gim, '<li>$1</li>');
+            text = text.replace(/(<li>[\s\S]*?<\/li>)/g, '<ul class="list-disc pl-5 my-2 space-y-1 text-slate-700 dark:text-slate-300">$1</ul>');
+            
+            const paragraphs = text.split(/\n{2,}/);
+            return paragraphs.map(p => {
+                const trimmed = p.trim();
+                if (trimmed.startsWith('<h') || trimmed.startsWith('<ul') || trimmed.startsWith('<li')) {
+                    return trimmed;
+                }
+                return `<p class="mb-3 leading-relaxed text-slate-700 dark:text-slate-300 font-semibold">${trimmed.replace(/\n/g, '<br>')}</p>`;
+            }).join('\n');
+        }
+
+        /* 지수 백오프 기반 API 호출 헬퍼 */
+        async function fetchGeminiWithRetry(url, payload, retries = 3, delay = 1000) {
+            for (let i = 0; i < retries; i++) {
+                try {
+                    const response = await fetch(url, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(payload)
+                    });
+                    if (response.ok) return response;
+                    if (response.status === 429) {
+                        await new Promise(res => setTimeout(res, delay));
+                        delay *= 2;
+                        continue;
+                    }
+                    throw new Error(`HTTP ${response.status}`);
+                } catch (error) {
+                    if (i === retries - 1) throw error;
+                    await new Promise(res => setTimeout(res, delay));
+                    delay *= 2;
+                }
+            }
+        }
+
+        async function sendQueryToAI() {
+            const input = document.getElementById('ai-query-input');
+            const queryText = input.value.trim();
+            if (!queryText) return;
+
+            const placeholder = document.getElementById('ai-response-placeholder');
+            const content = document.getElementById('ai-response-content');
+            const submitBtn = document.getElementById('ai-submit-btn');
+            const ttsPanel = document.getElementById('ai-tts-panel');
+
+            placeholder.classList.add('hidden');
+            content.classList.remove('hidden');
+            ttsPanel.classList.add('hidden');
+            
+            const audioEl = document.getElementById('tts-audio-element');
+            audioEl.pause();
+            isAudioPlaying = false;
+            document.getElementById('tts-btn-text').innerText = "AI 성우 가이드 듣기";
+            cachedAudioUrl = null;
+
+            content.innerHTML = `
+                <div class="flex flex-col items-center gap-3 py-10 justify-center text-blue-600 dark:text-blue-400 font-bold">
+                    <i class="fa-solid fa-spinner animate-spin text-3xl"></i>
+                    <span class="text-xs sm:text-sm text-center">Gemini AI가 실시간 구글 검색을 기반으로<br class="sm:hidden"> 김해 맞춤 동선 좌표를 매칭하고 있습니다...</span>
+                </div>
+            `;
+            submitBtn.disabled = true;
+
+            try {
+                const systemPrompt = `당신은 경상남도 김해시의 미식 및 로컬 여행 전문 AI 컨시어지입니다.
+                다음 맛집 Top 3 정보를 기본 컨텍스트로 인지하고, 타지 방문객의 질문에 맞춰 연계 코스를 추천해 주세요:
+                1. 더도이 종가집 돼지국밥 (분성로 152) - 맑고 고소한 가마솥 육수, 수육백반 강추.
+                2. 무봉리토종순대국 (내덕로 46) - 진한 전통 사골육수, 수제 겉절이김치와의 완벽 매칭.
+                3. 춘천명물닭갈비 (내외로95번길 7) - 100% 닭다리살 매콤 닭갈비, 눈꽃치즈와 볶음밥 필수.
+                김해의 실제 관광명소(연지공원, 수로왕릉, 봉황대길 등)를 적절히 섞어서 아주 맛깔나고 구체적으로 설명해 주세요.`;
+
+                /* Canvas 환경 자동 API 연동 규격 준수 */
+                const apiKey = ""; 
+                const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-3-flash-preview:generateContent?key=${apiKey}`;
+
+                const payload = {
+                    contents: [{ parts: [{ text: queryText }] }],
+                    tools: [{ "google_search": {} }],
+                    systemInstruction: {
+                        parts: [{ text: systemPrompt }]
+                    }
+                };
+
+                const response = await fetchGeminiWithRetry(apiUrl, payload);
+                const result = await response.json();
+                const candidate = result.candidates?.[0];
+
+                if (candidate && candidate.content?.parts?.[0]?.text) {
+                    const generatedText = candidate.content.parts[0].text;
+                    currentAITextResponse = generatedText;
+                    
+                    let sources = [];
+                    const groundingMetadata = candidate.groundingMetadata;
+                    if (groundingMetadata && groundingMetadata.groundingAttributions) {
+                        sources = groundingMetadata.groundingAttributions
+                            .map(attr => ({
+                                uri: attr.web?.uri,
+                                title: attr.web?.title,
+                            }))
+                            .filter(src => src.uri && src.title);
+                    }
+
+                    let formattedHTML = parseMarkdown(generatedText);
+
+                    if (sources.length > 0) {
+                        formattedHTML += `
+                            <div class="mt-5 pt-3.5 border-t border-slate-300/40 dark:border-slate-800/40">
+                                <p class="text-[10px] font-black text-slate-400 dark:text-slate-500 mb-2 flex items-center gap-1">
+                                    <i class="fa-solid fa-magnifying-glass-location text-blue-500"></i> 실시간 탐색 검색 출처:
+                                </p>
+                                <div class="flex flex-wrap gap-1.5">
+                        `;
+                        sources.forEach(source => {
+                            const escapedTitle = source.title.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+                            formattedHTML += `
+                                <a href="${source.uri}" target="_blank" rel="noopener noreferrer" class="inline-flex items-center gap-1 bg-blue-50/80 dark:bg-blue-950/40 text-blue-700 dark:text-blue-300 border border-blue-100/50 dark:border-blue-900/20 text-[10px] font-bold py-1 px-2.5 rounded-full hover:bg-blue-100 dark:hover:bg-blue-900/40 transition-colors">
+                                    <i class="fa-solid fa-link text-[8px] opacity-70"></i> ${escapedTitle}
+                                </a>
+                            `;
+                        });
+                        formattedHTML += `</div></div>`;
+                    }
+
+                    content.innerHTML = formattedHTML;
+                    completeQuest('ai');
+
+                    if (currentAITextResponse.length > 10) {
+                        ttsPanel.classList.remove('hidden');
+                    }
+
+                } else {
+                    throw new Error("Invalid API response format");
+                }
+
+            } catch (err) {
+                console.error("Gemini API Error:", err);
+                content.innerHTML = `
+                    <div class="p-4 bg-red-50 dark:bg-red-950/20 text-red-750 dark:text-red-400 rounded-2xl border border-red-200/50 text-xs sm:text-sm font-bold text-center">
+                        <i class="fa-solid fa-circle-exclamation text-xl mb-1 block"></i>
+                        실시간 인공지능 통신 중 일시적인 오류가 발생했습니다.<br>잠시 후 다시 시도하시거나 예시 질문 목록을 눌러보세요.
+                    </div>
+                `;
+            } finally {
+                submitBtn.disabled = false;
+                input.value = "";
+                document.getElementById('ai-response-box').scrollTop = 0;
+            }
+        }
+
+        /* AI TTS 오디오 재생 제어 */
+        async function playAITTS() {
+            const audioEl = document.getElementById('tts-audio-element');
+            const playBtnText = document.getElementById('tts-btn-text');
+            
+            if (isAudioPlaying) {
+                audioEl.pause();
+                isAudioPlaying = false;
+                playBtnText.innerText = "AI 성우 가이드 듣기";
+                return;
+            }
+
+            if (cachedAudioUrl) {
+                audioEl.play();
+                isAudioPlaying = true;
+                playBtnText.innerText = "오디오 정지";
+                completeQuest('tts');
+                return;
+            }
+
+            playBtnText.innerText = "가이드 조율 중...";
+            
+            try {
+                const cleanedText = currentAITextResponse
+                    .replace(/<\/?[^>]+(>|$)/g, "")
+                    .replace(/[^\w\s가-힣ㄱ-ㅎㅏ-ㅣ.,!?]/g, "")
+                    .trim();
+
+                const summaryText = cleanedText.length > 150 
+                    ? cleanedText.substring(0, 150) + "..." 
+                    : cleanedText;
+
+                const speakPrompt = `다정하고 친근한 목소리로 인사하며 다음 가이드를 또박또박 한국어로 말해주세요: "안녕하세요! 김해 맛집 가이드 성우입니다. ${summaryText}"`;
+
+                const payload = {
+                    contents: [{ parts: [{ text: speakPrompt }] }],
+                    generationConfig: {
+                        responseModalities: ["AUDIO"],
+                        speechConfig: {
+                            voiceConfig: {
+                                prebuiltVoiceConfig: { voiceName: "Achird" }
+                            }
+                        }
+                    }
+                };
+
+                const apiKey = "";
+                const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-tts:generateContent?key=${apiKey}`;
+
+                const response = await fetch(apiUrl, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+
+                const result = await response.json();
+                const part = result?.candidates?.[0]?.content?.parts?.[0];
+                const audioData = part?.inlineData?.data;
+                const mimeType = part?.inlineData?.mimeType;
+
+                if (audioData && mimeType && mimeType.startsWith("audio/")) {
+                    const matchRate = mimeType.match(/rate=(\d+)/);
+                    const sampleRate = matchRate ? parseInt(matchRate[1], 10) : 24000;
+                    
+                    const pcmData = base64ToArrayBuffer(audioData);
+                    const pcm16 = new Int16Array(pcmData);
+                    
+                    const wavBlob = pcmToWav(pcm16, sampleRate);
+                    cachedAudioUrl = URL.createObjectURL(wavBlob);
+                    
+                    audioEl.src = cachedAudioUrl;
+                    audioEl.play();
+                    
+                    isAudioPlaying = true;
+                    playBtnText.innerText = "오디오 정지";
+                    
+                    audioEl.onended = () => {
+                        isAudioPlaying = false;
+                        playBtnText.innerText = "AI 성우 가이드 듣기";
+                    };
+
+                    completeQuest('tts');
+
+                } else {
+                    throw new Error("오디오 트랙 수신에 실패했습니다.");
+                }
+
+            } catch (err) {
+                console.error("TTS Generator error:", err);
+                showToast("⚠️ 가이드 음성 연결 중 오류가 발생했습니다.");
+                playBtnText.innerText = "AI 성우 가이드 듣기";
+            }
+        }
+
+        /* PCM 16-bit to WAV 음원 컨테이너 빌더 오프라인 연산자 */
+        function pcmToWav(pcm16, sampleRate) {
+            const buffer = new ArrayBuffer(44 + pcm16.length * 2);
+            const view = new DataView(buffer);
+            
+            writeString(view, 0, 'RIFF');
+            view.setUint32(4, 36 + pcm16.length * 2, true);
+            writeString(view, 8, 'WAVE');
+            writeString(view, 12, 'fmt ');
+            view.setUint32(16, 16, true);
+            view.setUint16(20, 1, true);
+            view.setUint16(22, 1, true);
+            view.setUint32(24, sampleRate, true);
+            view.setUint32(28, sampleRate * 2, true);
+            view.setUint16(32, 2, true);
+            view.setUint16(34, 16, true);
+            writeString(view, 36, 'data');
+            view.setUint32(40, pcm16.length * 2, true);
+            
+            for (let i = 0; i < pcm16.length; i++) {
+                view.setInt16(44 + i * 2, pcm16[i], true);
+            }
+            
+            return new Blob([buffer], { type: 'audio/wav' });
+        }
+
+        function writeString(view, offset, string) {
+            for (let i = 0; i < string.length; i++) {
+                view.setUint8(offset + i, string.charCodeAt(i));
+            }
+        }
+
+        function base64ToArrayBuffer(base64) {
+            const binaryString = window.atob(base64);
+            const len = binaryString.length;
+            const bytes = new Uint8Array(len);
+            for (let i = 0; i < len; i++) {
+                bytes[i] = binaryString.charCodeAt(i);
+            }
+            return bytes.buffer;
+        }
+
+        /* Imagen 4.0 기반 AI 맛집 기념 엽서 발행기 */
+        async function generatePostcard() {
+            const input = document.getElementById('postcard-query-input');
+            const queryText = input.value.trim();
+            if (!queryText) return;
+
+            const placeholder = document.getElementById('postcard-placeholder');
+            const container = document.getElementById('postcard-output-container');
+            const postcardImage = document.getElementById('postcard-image');
+            const caption = document.getElementById('postcard-prompt-caption');
+            const submitBtn = document.getElementById('postcard-submit-btn');
+            const submitText = document.getElementById('postcard-btn-text');
+
+            placeholder.innerHTML = `
+                <div class="flex flex-col items-center gap-3 py-6 justify-center text-purple-600 dark:text-purple-400 font-bold">
+                    <i class="fa-solid fa-spinner animate-spin text-3xl"></i>
+                    <span class="text-xs sm:text-sm text-center">Google Imagen 4.0이 세상에 하나뿐인<br class="sm:hidden"> 김해 기념 엽서를 그리는 중입니다...</span>
+                </div>
+            `;
+            submitBtn.disabled = true;
+            submitText.innerText = "제작 중...";
+
+            try {
+                const payload = {
+                    instances: { prompt: queryText },
+                    parameters: { "sampleCount": 1 }
+                };
+
+                const apiKey = "";
+                const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/imagen-4.0-generate-001:predict?key=${apiKey}`;
+
+                const response = await fetch(apiUrl, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+
+                const result = await response.json();
+                const encodedBytes = result?.predictions?.[0]?.bytesBase64Encoded;
+
+                if (encodedBytes) {
+                    const generatedUrl = `data:image/png;base64,${encodedBytes}`;
+                    
+                    postcardImage.src = generatedUrl;
+                    caption.innerText = `"${queryText}"`;
+                    
+                    placeholder.classList.add('hidden');
+                    container.classList.remove('hidden');
+                    
+                    showToast("🎨 세상에 하나뿐인 김해 미식 기념 엽서가 발행되었습니다!");
+                    completeQuest('postcard');
+
+                } else {
+                    throw new Error("이미지 생성 응답 바이트 수신 실패");
+                }
+
+            } catch (err) {
+                console.error("Imagen generation failed:", err);
+                placeholder.innerHTML = `
+                    <div class="p-4 text-red-500 text-xs sm:text-sm font-bold text-center">
+                        <i class="fa-solid fa-circle-exclamation text-xl mb-1 block"></i>
+                        이미지 생성 통신 중 오류가 발생했습니다.<br>다른 스타일 문구를 작성하시거나 잠시 후 다시 조율해 보세요.
+                    </div>
+                `;
+            } finally {
+                submitBtn.disabled = false;
+                submitText.innerText = "엽서 발행하기";
+                input.value = "";
+            }
+        }
+
+        /* -------------------------------------------------------------
+         * 6. 맞춤형 퀴즈 데이터 매핑 및 로직
+         * ------------------------------------------------------------- */
+        const quizResults = {
+            korean: {
+                name: '더도이 종가집 돼지국밥',
+                emoji: '🍲',
+                desc: '한국인의 정과 24시간 가마솥에서 푹 고아내어 맑고 진한 고소함이 온몸으로 충전되는 김해의 대표 돼지국밥 명가입니다!',
+                link: 'https://map.naver.com/p/search/%EB%8D%94%EB%8F%84%EC%9D%B4%EB%8F%BC%EC%A7%80%EA%B5%AD%EB%B0%A5/place/21121425?c=15.00,0,0,0,dh&placePath=%2Fhome%3Fbk_query%3D%EB%8D%94%EB%8F%84%EC%9D%B4%EB%8F%BC%EC%A7%80%EA%B5%AD%EB%B0%A5%26entry%3Dpll%26from%3Dmap%26fromPanelNum%3D2%26timestamp%3D202607101703%26locale%3Dko%26svcName%3Dmap_pcv5%26searchText%3D%EB%8D%94%EB%8F%84%EC%9D%B4%EB%8F%BC%EC%A7%80%EA%B5%AD%EB%B0%A5'
+            },
+            dense: {
+                name: '무봉리토종순대국',
+                emoji: '🥣',
+                desc: '매일 사장님이 직접 버무려 신선하고 아삭한 배추겉절이와 전통 사골토종순대가 환상의 균형을 이루며 속을 묵직하게 가득 메워주는 소울푸드 한 그릇입니다!',
+                link: 'https://map.naver.com/p/search/%EB%AC%B4%EB%B4%89%EB%A6%AC%EC%88%9C%EB%8C%80%EA%B5%AD/place/15200126?c=13.00,0,0,0,dh&placePath=%2Fhome%3Fentry%3Dbmp%26from%3Dmap%26fromPanelNum%3D2%26timestamp%3D202607101703%26locale%3Dko%26svcName%3Dmap_pcv5%26searchText%3D%EB%AC%B4%EB%B4%89%EB%A6%AC%EC%88%9C%EB%8C%80%EA%B5%AD'
+            },
+            spicy: {
+                name: '춘천명물닭갈비',
+                emoji: '🔥',
+                desc: '야들야들하고 촉촉한 닭다리 순살과 기가 막히는 감칠맛의 비법 양념 철판구이, 눈꽃치즈 사리를 곁들여 스트레스를 한방에 해소하는 자타공인 최고의 닭갈비입니다!',
+                link: 'https://map.naver.com/p/entry/place/15147098?c=13.00,0,0,0,dh&placePath=%2Fhome%3Ffrom%3Dmap%26fromPanelNum%3D1%26additionalHeight%3D76%26timestamp%3D202607101704%26locale%3Dko%26svcName%3Dmap_pcv5'
+            }
+        };
+
+        function selectQuizOption(optionKey) {
+            const result = quizResults[optionKey];
+            const qContainer = document.getElementById('quiz-question-container');
+            const rContainer = document.getElementById('quiz-result-container');
+            const rCard = document.getElementById('quiz-result-card');
+
+            qContainer.classList.add('hidden');
+            rContainer.classList.remove('hidden');
+
+            rCard.innerHTML = `
+                <div class="text-5xl mb-4">${result.emoji}</div>
+                <h4 class="text-lg sm:text-xl font-extrabold text-slate-900 dark:text-white">${result.name}</h4>
+                <p class="text-xs sm:text-sm text-slate-600 dark:text-slate-350 mt-2.5 leading-relaxed font-bold">${result.desc}</p>
+                <div class="mt-5">
+                    <a onclick="trackMapClick()" href="${result.link}" target="_blank" rel="noopener noreferrer" class="inline-flex items-center gap-1.5 text-xs font-black text-blue-600 dark:text-blue-400 hover:underline">
+                        식당 실시간 상세 지도 보러가기 <i class="fa-solid fa-arrow-right"></i>
+                    </a>
+                </div>
+            `;
+
+            completeQuest('quiz');
+        }
+
+        function resetQuiz() {
+            document.getElementById('quiz-result-container').classList.add('hidden');
+            document.getElementById('quiz-question-container').classList.remove('hidden');
+        }
+
+        /* -------------------------------------------------------------
+         * 7. 실시간 영구 방명록 시스템 (Firebase 클라우드 + 완전 오프라인 하이브리드 폴백 탑재)
+         * ------------------------------------------------------------- */
+        let db = null;
+        let useMockData = false;
+        let myGuestUserId = null;
+        let selectedEmoji = "🍲";
+        let mockComments = [
+            { id: "mock1", name: "동탐대장", emoji: "🍲", text: "더도이 돼지국밥 수백 최고네요! 주차가 너무 편해서 여행 첫 코스로 대만족이었습니다.", timestamp: Date.now() - 3600000, isMock: true },
+            { id: "mock2", name: "여행러S", emoji: "🔥", text: "춘천닭갈비 양념 감칠맛 대박입니다. 마지막 볶음밥은 배불러도 무조건 드세요!", timestamp: Date.now() - 7200000, isMock: true }
+        ];
+
+        /* 익명 고유 사용자 ID 세팅 */
+        function initGuestUser() {
+            let uid = localStorage.getItem('gimhae_guestbook_uid');
+            if (!uid) {
+                uid = 'guest_' + Math.random().toString(36).substring(2, 11);
+                localStorage.setItem('gimhae_guestbook_uid', uid);
+            }
+            myGuestUserId = uid;
+        }
+
+        function setupFirebase() {
+            initGuestUser();
+            const firebaseConfig = {
+                apiKey: "AIzaSyDummyKeyForSafetyVerification",
+                authDomain: "gimhae-gourmet-top3.firebaseapp.com",
+                projectId: "gimhae-gourmet-top3",
+                storageBucket: "gimhae-gourmet-top3.appspot.com",
+                messagingSenderId: "1234567890",
+                appId: "1:1234567890:web:abcdef123456"
+            };
+
+            try {
+                const app = initializeApp(firebaseConfig);
+                db = getFirestore(app);
+                const auth = getAuth(app);
+                
+                signInAnonymously(auth)
+                    .then(() => {
+                        subscribeRealtimeComments();
+                    })
+                    .catch((err) => {
+                        console.warn("Firebase Auth Anonymous Sign-In failed, switching to premium offline storage fallback mode:", err);
+                        enableLocalMockMode();
+                    });
+
+            } catch (error) {
+                console.warn("Firebase Initialisation failed. Utilizing ultra fast local storage fallback mode.", error);
+                enableLocalMockMode();
+            }
+        }
+
+        function enableLocalMockMode() {
+            useMockData = true;
+            document.getElementById('guestbook-loader').classList.add('hidden');
+            document.getElementById('guestbook-list').classList.remove('hidden');
+            
+            const saved = localStorage.getItem('gimhae_local_mock_comments_v1');
+            if (saved) {
+                try {
+                    mockComments = JSON.parse(saved);
+                } catch (e) {}
+            }
+            renderComments(mockComments);
+        }
+
+        /* 실시간 코멘트 변경 수신 처리 */
+        function subscribeRealtimeComments() {
+            const loader = document.getElementById('guestbook-loader');
+            const listContainer = document.getElementById('guestbook-list');
+
+            try {
+                const q = query(collection(db, "guestbook_messages"));
+                onSnapshot(q, (snapshot) => {
+                    let items = [];
+                    snapshot.forEach((docSnap) => {
+                        items.push({ id: docSnap.id, ...docSnap.data() });
+                    });
+                    
+                    items.sort((a, b) => b.timestamp - a.timestamp);
+                    renderComments(items);
+                    
+                    loader.classList.add('hidden');
+                    listContainer.classList.remove('hidden');
+                }, (error) => {
+                    console.error("Firestore onSnapshot error, fallback active:", error);
+                    enableLocalMockMode();
+                });
+            } catch (err) {
+                enableLocalMockMode();
+            }
+        }
+
+        function selectCommentEmoji(emoji) {
+            selectedEmoji = emoji;
+            document.querySelectorAll('.emoji-btn').forEach(btn => {
+                btn.className = "emoji-btn text-2xl p-2 rounded-xl bg-white/50 dark:bg-slate-900/40 border-2 border-transparent hover:border-slate-300 hover:scale-105 active:scale-95 transition-all";
+            });
+            const targetBtn = document.getElementById(`emoji-${emoji}`);
+            if (targetBtn) {
+                targetBtn.className = "emoji-btn text-2xl p-2 rounded-xl bg-blue-500/20 border-2 border-blue-500 hover:scale-105 active:scale-95 transition-all";
+            }
+        }
+
+        async function submitComment() {
+            const nameInput = document.getElementById('guestbook-name-input');
+            const msgInput = document.getElementById('guestbook-msg-input');
+            const name = nameInput.value.trim() || "익명 탐험대원";
+            const text = msgInput.value.trim();
+
+            if (!text) {
+                showToast("⚠️ 한줄평 메시지 본문을 작성해 주세요.");
+                return;
+            }
+
+            const commentObj = {
+                name: name,
+                emoji: selectedEmoji,
+                text: text,
+                timestamp: Date.now(),
+                userId: myGuestUserId
+            };
+
+            if (useMockData) {
+                mockComments.unshift({ id: 'local_' + Date.now(), ...commentObj });
+                localStorage.setItem('gimhae_local_mock_comments_v1', JSON.stringify(mockComments));
+                renderComments(mockComments);
+                showToast("✍️ 로컬 영구 방명록이 안전하게 갱신되었습니다!");
+                completeQuest('comment');
+            } else {
+                try {
+                    await addDoc(collection(db, "guestbook_messages"), commentObj);
+                    showToast("✍️ 실시간 방명록이 클라우드에 성공적으로 기록되었습니다!");
+                    completeQuest('comment');
+                } catch (err) {
+                    console.error("Failed to write to firestore, writing locally:", err);
+                    useMockData = true;
+                    mockComments.unshift({ id: 'local_' + Date.now(), ...commentObj });
+                    localStorage.setItem('gimhae_local_mock_comments_v1', JSON.stringify(mockComments));
+                    renderComments(mockComments);
+                }
+            }
+
+            msgInput.value = "";
+            nameInput.value = "";
+        }
+
+        async function deleteComment(id) {
+            if (useMockData) {
+                mockComments = mockComments.filter(item => item.id !== id);
+                localStorage.setItem('gimhae_local_mock_comments_v1', JSON.stringify(mockComments));
+                renderComments(mockComments);
+                showToast("🗑️ 코멘트가 삭제되었습니다.");
+            } else {
+                try {
+                    await deleteDoc(doc(db, "guestbook_messages", id));
+                    showToast("🗑️ 클라우드 댓글 데이터가 영구 삭제되었습니다.");
+                } catch (err) {
+                    console.error("Failed to delete", err);
+                    showToast("⚠️ 삭제 권한이 없거나 일시적인 통신 장애입니다.");
+                }
+            }
+        }
+
+        /* 댓글 리스트 돔 렌더러 */
+        function renderComments(list) {
+            const listContainer = document.getElementById('guestbook-list');
+            if (list.length === 0) {
+                listContainer.innerHTML = `
+                    <div class="text-center py-8 text-xs text-slate-400 font-bold">
+                        첫 번째 따뜻한 한줄평을 남겨보세요!
+                    </div>
+                `;
+                return;
+            }
+
+            let html = "";
+            list.forEach(item => {
+                const dateStr = new Date(item.timestamp).toLocaleDateString('ko-KR', {
+                    month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit'
+                });
+                
+                const showDeleteBtn = item.userId === myGuestUserId || item.isMock;
+                const escName = item.name.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+                const escText = item.text.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+
+                html += `
+                    <div class="flex items-start gap-3 p-3.5 bg-white/70 dark:bg-slate-900/50 rounded-2xl border border-slate-200/40 dark:border-slate-800/40 shadow-sm transition-all">
+                        <div class="text-3xl shrink-0 p-1 bg-slate-50 dark:bg-slate-800 rounded-xl select-none">${item.emoji}</div>
+                        <div class="flex-1 min-w-0">
+                            <div class="flex justify-between items-center">
+                                <span class="font-extrabold text-xs text-slate-900 dark:text-white truncate">${escName}</span>
+                                <span class="text-[9px] text-slate-400 font-bold shrink-0">${dateStr}</span>
+                            </div>
+                            <p class="text-xs text-slate-600 dark:text-slate-300 mt-1 font-semibold leading-relaxed break-words">${escText}</p>
+                        </div>
+                        ${showDeleteBtn ? `
+                            <button onclick="deleteComment('${item.id}')" class="text-slate-400 hover:text-red-500 p-1 shrink-0 transition-colors" title="삭제">
+                                <i class="fa-solid fa-trash-can text-xs"></i>
+                            </button>
+                        ` : ''}
+                    </div>
+                `;
+            });
+
+            listContainer.innerHTML = html;
+        }
+
+        /* -------------------------------------------------------------
+         * 8. 생명주기 및 브라우저 이벤트 바인딩
+         * ------------------------------------------------------------- */
+        
+        /* 100% 스크롤 달성 퀘스트 트래커 */
+        let scrollQuestTriggered = false;
+        window.addEventListener('scroll', () => {
+            const scrollTop = window.scrollY || document.documentElement.scrollTop;
+            const scrollHeight = document.documentElement.scrollHeight - document.documentElement.clientHeight;
+            
+            let percent = 0;
+            if (scrollHeight > 0) {
+                percent = Math.min((scrollTop / scrollHeight) * 100, 100);
+            }
+            
+            document.getElementById('scroll-indicator').style.width = percent + '%';
+
+            if (percent >= 98 && !scrollQuestTriggered) {
+                scrollQuestTriggered = true;
+                completeQuest('scroll');
+            }
+        });
+
+        /* 마우스 및 터치 리스너 (파티클 인터랙션용) */
         window.addEventListener('mousemove', (e) => {
             mouse.x = e.clientX;
             mouse.y = e.clientY;
@@ -992,7 +1734,7 @@
                 mouse.x = e.touches[0].clientX;
                 mouse.y = e.touches[0].clientY;
             }
-        }, { passive: true });
+        });
 
         window.addEventListener('touchend', () => {
             mouse.x = null;
@@ -1001,237 +1743,7 @@
 
         window.addEventListener('resize', resizeCanvas);
 
-
-        /* -------------------------------------------------------------
-         * 4. 다크/라이트모드 & 글로벌 유틸 스크립트
-         * ------------------------------------------------------------- */
-        function initTheme() {
-            const savedTheme = localStorage.getItem('theme');
-            const systemPrefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
-            
-            if (savedTheme === 'dark' || (!savedTheme && systemPrefersDark)) {
-                document.documentElement.classList.add('dark');
-                updateThemeUI(true);
-            } else {
-                document.documentElement.classList.remove('dark');
-                updateThemeUI(false);
-            }
-        }
-
-        function toggleTheme() {
-            const isDark = document.documentElement.classList.toggle('dark');
-            localStorage.setItem('theme', isDark ? 'dark' : 'light');
-            updateThemeUI(isDark);
-            showToast(isDark ? "🌙 완벽한 우주 밤안개 다크 모드로 설정되었습니다." : "☀️ 눈이 맑고 정화되는 라이트 모드로 설정되었습니다.");
-        }
-
-        function updateThemeUI(isDark) {
-            const themeIcon = document.getElementById('theme-icon');
-            const themeText = document.getElementById('theme-text');
-            if (themeIcon && themeText) {
-                if (isDark) {
-                    themeIcon.innerText = "☀️";
-                    themeText.innerText = "라이트 모드";
-                } else {
-                    themeIcon.innerText = "🌙";
-                    themeText.innerText = "다크 모드";
-                }
-            }
-        }
-
-        function toggleMobileMenu() {
-            const menu = document.getElementById('mobile-menu');
-            const icon = document.getElementById('menu-icon');
-            if (menu.classList.contains('hidden')) {
-                menu.classList.remove('hidden');
-                icon.classList.remove('fa-bars');
-                icon.classList.add('fa-xmark');
-            } else {
-                menu.classList.add('hidden');
-                icon.classList.remove('fa-xmark');
-                icon.classList.add('fa-bars');
-            }
-        }
-
-        function closeMobileMenu() {
-            const menu = document.getElementById('mobile-menu');
-            const icon = document.getElementById('menu-icon');
-            menu.classList.add('hidden');
-            icon.classList.remove('fa-xmark');
-            icon.classList.add('fa-bars');
-        }
-
-        window.addEventListener('scroll', () => {
-            const btn = document.getElementById('back-to-top');
-            if (window.scrollY > 300) {
-                btn.classList.remove('opacity-0', 'pointer-events-none');
-                btn.classList.add('opacity-100');
-            } else {
-                btn.classList.add('opacity-0', 'pointer-events-none');
-                btn.classList.remove('opacity-100');
-            }
-        });
-
-        // 원터치 모바일 알림창
-        function showToast(message) {
-            const toast = document.getElementById('toast');
-            const toastMsg = document.getElementById('toast-message');
-            toastMsg.innerText = message;
-            
-            toast.classList.remove('opacity-0', 'translate-y-4', 'pointer-events-none');
-            toast.classList.add('opacity-100', 'translate-y-0');
-            
-            setTimeout(() => {
-                toast.classList.remove('opacity-100', 'translate-y-0');
-                toast.classList.add('opacity-0', 'translate-y-4', 'pointer-events-none');
-            }, 2200);
-        }
-
-        function copyToClipboard(text) {
-            const textarea = document.createElement('textarea');
-            textarea.value = text;
-            document.body.appendChild(textarea);
-            textarea.select();
-            document.execCommand('copy');
-            document.body.removeChild(textarea);
-            showToast("📋 주소가 성공적으로 복사되었습니다. 지도 앱에 붙여넣으세요!");
-        }
-
-        function switchSelectorTab(tab) {
-            const tabAi = document.getElementById('tab-ai');
-            const tabQuiz = document.getElementById('tab-quiz');
-            const panelAi = document.getElementById('panel-ai');
-            const panelQuiz = document.getElementById('panel-quiz');
-
-            if (tab === 'ai') {
-                tabAi.className = "flex-1 py-5 text-center font-black text-sm sm:text-base border-b-2 border-blue-600 dark:border-blue-400 text-blue-600 dark:text-blue-400 transition-all flex items-center justify-center gap-2";
-                tabQuiz.className = "flex-1 py-5 text-center font-black text-sm sm:text-base border-b-2 border-transparent text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200 transition-all flex items-center justify-center gap-2";
-                panelAi.classList.remove('hidden');
-                panelQuiz.classList.add('hidden');
-            } else {
-                tabQuiz.className = "flex-1 py-5 text-center font-black text-sm sm:text-base border-b-2 border-blue-600 dark:border-blue-400 text-blue-600 dark:text-blue-400 transition-all flex items-center justify-center gap-2";
-                tabAi.className = "flex-1 py-5 text-center font-black text-sm sm:text-base border-b-2 border-transparent text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200 transition-all flex items-center justify-center gap-2";
-                panelQuiz.classList.remove('hidden');
-                panelAi.classList.add('hidden');
-            }
-        }
-
-        function fillAIQuery(queryText) {
-            document.getElementById('ai-query-input').value = queryText;
-            sendQueryToAI();
-        }
-
-        function sendQueryToAI() {
-            const input = document.getElementById('ai-query-input');
-            const query = input.value.trim();
-            if (!query) return;
-
-            const placeholder = document.getElementById('ai-response-placeholder');
-            const content = document.getElementById('ai-response-content');
-            const submitBtn = document.getElementById('ai-submit-btn');
-
-            placeholder.classList.add('hidden');
-            content.classList.remove('hidden');
-            content.innerHTML = `
-                <div class="flex items-center gap-2.5 py-6 justify-center text-blue-600 dark:text-blue-400 font-bold">
-                    <i class="fa-solid fa-spinner animate-spin text-2xl"></i>
-                    <span>김해 맛집 실시간 좌표 및 가독 루트를 계산하고 있습니다...</span>
-                </div>
-            `;
-            submitBtn.disabled = true;
-
-            setTimeout(() => {
-                let responseHTML = "";
-
-                if (query.includes("공항")) {
-                    responseHTML = `
-                        <p>✈️ <strong>김해공항 탑승 전 정시 안정 가이드</strong></p>
-                        <p>김해공항까지 경전철로 가볍게 다이렉트 이송이 가능한 <strong>'더도이 종가집 돼지국밥' (분성로 152)</strong>이 정답입니다.</p>
-                        <ul>
-                            <li><strong>안심 동선:</strong> 식사 후 바로 도보 5분 거리인 역에서 탑승 시 20분 내에 공항 플랫폼에 쾌적하게 안착합니다.</li>
-                            <li><strong>최적의 회전율:</strong> 입실 직후 3분 컷으로 식사가 세팅되므로 스케줄 촉박 시 최고의 선택입니다.</li>
-                            <li><strong>추천 페어링:</strong> 자극을 줄여 기내 속이 편안한 '수육백반'을 완벽하게 즐겨보세요.</li>
-                        </ul>
-                    `;
-                } else if (query.includes("아이")) {
-                    responseHTML = `
-                        <p>👨‍👩‍👧‍👦 <strong>가족 및 동반 어린 자녀 맞춤 안심 동선</strong></p>
-                        <p>쾌적하고 테이블 간격이 넓으며 청결 위생이 빼어난 매장 동선입니다.</p>
-                        <ul>
-                            <li><strong>더도이 종가집 돼지국밥:</strong> 가마솥 안심 전통 가마솥 육수가 심심하면서도 고소하여 자녀분들이 밥을 말아먹기에 단연 좋습니다.</li>
-                            <li><strong>춘천명물닭갈비:</strong> 순한맛/치즈 사리 듬뿍 옵션을 추가하여, 마지막 볶음밥에 날치알을 섞어 주시면 온 가족 미식 파티가 성립됩니다.</li>
-                        </ul>
-                    `;
-                } else if (query.includes("닭갈비") || query.includes("카페")) {
-                    responseHTML = `
-                        <p>☕ <strong>춘천명물닭갈비 매콤 완식 후 감성 로드</strong></p>
-                        <p>화끈한 <strong>'춘천명물닭갈비' (내외로95번길 7)</strong>에서 활력을 충전하고 소화를 돕는 힐링 가이드입니다.</p>
-                        <ul>
-                            <li><strong>가야 연지공원 산책:</strong> 도보 10분 내 거리에 자리한 대형 호수공원에서 분수쇼와 가로수 데크를 따라 걸으세요.</li>
-                            <li><strong>감성 로스터리:</strong> 내외동 학원 골목에 포진한 세련된 커피숍에서 고소한 라떼 한 잔으로 입안을 깔끔하게 환기하기 좋습니다.</li>
-                        </ul>
-                    `;
-                } else if (query.includes("국밥") || query.includes("수로왕릉")) {
-                    responseHTML = `
-                        <p>⛩️ <strong>전통 순대국 + 릉길 역사 투어 루트</strong></p>
-                        <p>가장 고전적이고 평화로운 한국형 투어 계획을 찾으신다면 아래와 같이 완벽합니다.</p>
-                        <ul>
-                            <li><strong>점심 식사: '무봉리토종순대국' (내덕로 46)</strong>에서 사골 명가의 든든함으로 튼튼한 다리 근력을 확보하세요.</li>
-                            <li><strong>식후 도보:</strong> 자차로 10여 분 거리에 인접한 <strong>'수로왕릉'</strong>의 고즈넉한 대왕릉 길과 돌담길 숲을 돌며 마음의 평안을 누리세요.</li>
-                        </ul>
-                    `;
-                } else {
-                    responseHTML = `
-                        <p>💡 <strong>김해 로컬 미식 컨시어지의 친절 안내</strong></p>
-                        <p>입력하신 <em>"${query}"</em> 테마에 기초하여 최고의 Top 3 맛집 포인트를 연결합니다.</p>
-                        <ul>
-                            <li><strong>위생 우선과 테이블 빠른 회전:</strong> 깔끔하고 풍성한 고기가 매력인 <strong>더도이 종가집 돼지국밥</strong></li>
-                            <li><strong>겉절이와 전통 순대의 고소한 정수:</strong> 깊고 은은한 매력의 <strong>무봉리토종순대국</strong></li>
-                            <li><strong>철판과 양념, 볶음밥의 에너지 충전:</strong> 신바람 나게 즐기는 친화 명당 <strong>춘천명물닭갈비</strong></li>
-                        </ul>
-                        <p>동선 계획이 더 구체적이거나 예상 시간이 정해져 있다면 알려주세요. 더욱 정밀하게 플래닝해 드리겠습니다!</p>
-                    `;
-                }
-
-                content.innerHTML = responseHTML;
-                submitBtn.disabled = false;
-                input.value = "";
-                
-                const box = document.getElementById('ai-response-box');
-                box.scrollTop = box.scrollHeight;
-            }, 1200);
-        }
-
-        function selectQuizOption(optionKey) {
-            const result = quizResults[optionKey];
-            const qContainer = document.getElementById('quiz-question-container');
-            const rContainer = document.getElementById('quiz-result-container');
-            const rCard = document.getElementById('quiz-result-card');
-
-            qContainer.classList.add('hidden');
-            rContainer.classList.remove('hidden');
-
-            rCard.innerHTML = `
-                <div class="text-5xl mb-4">${result.emoji}</div>
-                <h4 class="text-xl font-black text-slate-900 dark:text-white">${result.name}</h4>
-                <p class="text-xs sm:text-sm text-slate-600 dark:text-slate-300 mt-2 leading-relaxed font-bold">${result.desc}</p>
-                <div class="mt-5">
-                    <a href="${result.link}" class="inline-flex items-center gap-1.5 text-xs font-black text-blue-600 dark:text-blue-400 hover:underline">
-                        식당 위치 및 상세 지도 정보 보러가기 <i class="fa-solid fa-arrow-right"></i>
-                    </a>
-                </div>
-            `;
-        }
-
-        function resetQuiz() {
-            const qContainer = document.getElementById('quiz-question-container');
-            const rContainer = document.getElementById('quiz-result-container');
-            
-            rContainer.classList.add('hidden');
-            qContainer.classList.remove('hidden');
-        }
-
-        // HTML 인라인 온클릭과 ES Module간의 호환성을 위해 window 객체에 이벤트 매핑 등록
+        /* 바닐라 전역 공간으로 호환용 인라인 함수 바인딩 노출 */
         window.toggleTheme = toggleTheme;
         window.toggleMobileMenu = toggleMobileMenu;
         window.closeMobileMenu = closeMobileMenu;
@@ -1244,14 +1756,22 @@
         window.selectCommentEmoji = selectCommentEmoji;
         window.submitComment = submitComment;
         window.deleteComment = deleteComment;
+        window.toggleQuestBoard = toggleQuestBoard;
+        window.closeTierUpModal = closeTierUpModal;
+        window.trackMapClick = trackMapClick;
+        window.playAITTS = playAITTS;
+        window.generatePostcard = generatePostcard;
+        window.fillPostcardQuery = fillPostcardQuery;
 
-        // 로드 시 전체 이니셜라이징 진행
+        /* 온로드 이니셜라이저 */
         window.onload = function() {
             initTheme();
             resizeCanvas();
             animateParticles();
             setupFirebase();
-        }
+            loadGamificationState();
+        };
+
     </script>
 </body>
 </html>
