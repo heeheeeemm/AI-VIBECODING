@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, minimum-scale=1.0, user-scalable=yes">
-    <title>김해 맛집 가이드 - AI 실시간 미식 가이드</title>
+    <title>김해 맛집 가이드 - AI 실시간 미식 가이드 & 방명록</title>
     <!-- Tailwind CSS 로드 및 클래스 기반 다크모드 활성화 설정 -->
     <script src="https://cdn.tailwindcss.com"></script>
     <script>
@@ -104,6 +104,7 @@
                     <a href="#welcome" class="text-slate-700 dark:text-slate-300 hover:text-blue-600 dark:hover:text-blue-400 transition-colors">홈</a>
                     <a href="#selector" class="text-slate-700 dark:text-slate-300 hover:text-blue-600 dark:hover:text-blue-400 transition-colors">AI 추천 & 퀴즈</a>
                     <a href="#restaurants" class="text-slate-700 dark:text-slate-300 hover:text-blue-600 dark:hover:text-blue-400 transition-colors">추천 맛집 Top 3</a>
+                    <a href="#guestbook" class="text-slate-700 dark:text-slate-300 hover:text-blue-600 dark:hover:text-blue-400 transition-colors">방명록</a>
                     <a href="#tips" class="text-slate-700 dark:text-slate-300 hover:text-blue-600 dark:hover:text-blue-400 transition-colors">방문 꿀팁</a>
                 </div>
                 
@@ -127,6 +128,7 @@
                 <a href="#welcome" onclick="closeMobileMenu()" class="block py-3 px-4 rounded-xl hover:bg-white/50 dark:hover:bg-slate-800/50 text-slate-700 dark:text-slate-300 active:bg-blue-50 active:text-blue-600 transition-all"><i class="fa-solid fa-house mr-2.5 text-slate-400"></i>홈</a>
                 <a href="#selector" onclick="closeMobileMenu()" class="block py-3 px-4 rounded-xl hover:bg-white/50 dark:hover:bg-slate-800/50 text-slate-700 dark:text-slate-300 active:bg-blue-50 active:text-blue-600 transition-all"><i class="fa-solid fa-wand-magic-sparkles mr-2.5 text-slate-400"></i>AI 추천 & 퀴즈</a>
                 <a href="#restaurants" onclick="closeMobileMenu()" class="block py-3 px-4 rounded-xl hover:bg-white/50 dark:hover:bg-slate-800/50 text-slate-700 dark:text-slate-300 active:bg-blue-50 active:text-blue-600 transition-all"><i class="fa-solid fa-star mr-2.5 text-slate-400"></i>추천 맛집 Top 3</a>
+                <a href="#guestbook" onclick="closeMobileMenu()" class="block py-3 px-4 rounded-xl hover:bg-white/50 dark:hover:bg-slate-800/50 text-slate-700 dark:text-slate-300 active:bg-blue-50 active:text-blue-600 transition-all"><i class="fa-solid fa-comments mr-2.5 text-slate-400"></i>실시간 방명록</a>
                 <a href="#tips" onclick="closeMobileMenu()" class="block py-3 px-4 rounded-xl hover:bg-white/50 dark:hover:bg-slate-800/50 text-slate-700 dark:text-slate-300 active:bg-blue-50 active:text-blue-600 transition-all"><i class="fa-solid fa-circle-info mr-2.5 text-slate-400"></i>방문 꿀팁</a>
                 <div class="pt-3 border-t border-white/20 dark:border-white/5">
                     <a href="#selector" onclick="closeMobileMenu()" class="w-full inline-flex items-center justify-center gap-2 bg-blue-600 active:scale-95 text-white font-black py-3.5 px-4 rounded-2xl text-center shadow-lg transition-all text-sm">
@@ -141,7 +143,7 @@
     <header id="welcome" class="relative overflow-hidden py-16 sm:py-28 w-full transition-colors duration-300 z-10">
         <div class="relative max-w-4xl mx-auto px-4 sm:px-6 text-center">
             
-            <!-- 다크/라이트모드 토글 버튼 (가이드라인 위치 정밀 매칭 및 글로벌 완벽 연동) -->
+            <!-- 다크/라이트모드 토글 버튼 (완벽 연동) -->
             <div class="flex justify-start mb-8 -mt-4">
                 <button id="theme-toggle" onclick="toggleTheme()" class="inline-flex items-center gap-2.5 px-4 py-2.5 rounded-2xl bg-white/50 dark:bg-slate-800/50 text-slate-800 dark:text-slate-200 border border-white/40 dark:border-white/10 shadow-lg hover:border-blue-400 dark:hover:border-blue-500 active:scale-95 transition-all duration-200 text-xs sm:text-sm font-black backdrop-blur-md">
                     <span id="theme-icon">🌙</span>
@@ -467,6 +469,54 @@
         </div>
     </main>
 
+    <!-- 실시간 방명록 섹션 (Glassmorphism + Firebase) -->
+    <section id="guestbook" class="py-12 sm:py-20 max-w-4xl mx-auto px-4 w-full relative z-10">
+        <div class="glass-panel p-6 sm:p-10 rounded-3xl shadow-2xl transition-all duration-500 space-y-8">
+            <div class="text-center">
+                <span class="text-xs font-black text-blue-600 dark:text-blue-400 uppercase tracking-widest bg-blue-100/50 dark:bg-blue-950/40 px-3 py-1.5 rounded-md transition-colors duration-300 border border-blue-500/10">Live Guestbook</span>
+                <h2 class="text-2xl sm:text-3xl font-black text-slate-900 dark:text-white mt-3 transition-colors duration-300">🗣️ 김해 방문자 실시간 방명록</h2>
+                <p class="text-slate-600 dark:text-slate-400 mt-2 text-xs sm:text-sm font-semibold transition-colors duration-300">새로고침을 하거나 핸드폰으로 봐도 유지됩니다! 맛집 한줄평이나 후기를 실시간 공유해보세요.</p>
+            </div>
+
+            <!-- 메시지 등록 폼 -->
+            <div class="bg-white/30 dark:bg-slate-950/30 p-4 sm:p-6 rounded-2xl border border-white/55 dark:border-white/5 space-y-4">
+                <!-- 아바타/프로필 선택 영역 -->
+                <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-white/20 dark:border-b-white/5 pb-4">
+                    <div class="flex items-center gap-2.5">
+                        <span class="text-sm font-black text-slate-700 dark:text-slate-300">프로필 이모지:</span>
+                        <div class="flex gap-1.5" id="emoji-picker">
+                            <button onclick="selectCommentEmoji('🍲')" class="emoji-btn text-2xl p-1 bg-white/80 dark:bg-slate-800 rounded-xl border-2 border-blue-500 active:scale-90 transition-all">🍲</button>
+                            <button onclick="selectCommentEmoji('🥣')" class="emoji-btn text-2xl p-1 bg-transparent rounded-xl border-2 border-transparent active:scale-90 transition-all">🥣</button>
+                            <button onclick="selectCommentEmoji('🔥')" class="emoji-btn text-2xl p-1 bg-transparent rounded-xl border-2 border-transparent active:scale-90 transition-all">🔥</button>
+                            <button onclick="selectCommentEmoji('😋')" class="emoji-btn text-2xl p-1 bg-transparent rounded-xl border-2 border-transparent active:scale-90 transition-all">😋</button>
+                            <button onclick="selectCommentEmoji('✈️')" class="emoji-btn text-2xl p-1 bg-transparent rounded-xl border-2 border-transparent active:scale-90 transition-all">✈️</button>
+                        </div>
+                    </div>
+                    <!-- 닉네임 입력 -->
+                    <input type="text" id="guest-nickname" placeholder="익명 닉네임 (기본값: 익명미식가)" class="px-3.5 py-2 rounded-xl bg-white/50 dark:bg-slate-900/50 text-slate-800 dark:text-slate-100 border border-white/40 dark:border-white/10 focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm font-bold w-full sm:w-56">
+                </div>
+
+                <!-- 메시지 텍스트 입력 및 버튼 -->
+                <div class="flex flex-col sm:flex-row gap-2">
+                    <input type="text" id="guest-message" maxlength="100" placeholder="방문 후기나 응원 메시지를 남겨주세요 (최대 100자)" class="flex-1 px-4 py-3 rounded-xl bg-white/50 dark:bg-slate-900/50 text-slate-850 dark:text-slate-100 border border-white/40 dark:border-white/10 focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm font-bold">
+                    <button id="comment-submit-btn" onclick="submitComment()" class="bg-blue-600 hover:bg-blue-700 active:scale-95 text-white font-black px-6 py-3 rounded-xl transition-all text-sm flex items-center justify-center gap-2 shadow-lg shadow-blue-500/15">
+                        <span>작성하기</span> <i class="fa-solid fa-pen-nib"></i>
+                    </button>
+                </div>
+            </div>
+
+            <!-- 실시간 댓글 리스트 피드 -->
+            <div id="comment-list" class="space-y-3 max-h-[500px] overflow-y-auto pr-1 no-scrollbar">
+                <!-- 로딩 표시기 -->
+                <div class="text-center py-10 text-slate-400 dark:text-slate-500 text-sm" id="comment-loading">
+                    <i class="fa-solid fa-circle-notch animate-spin text-3xl mb-2 text-blue-500"></i>
+                    <p class="font-bold text-slate-600 dark:text-slate-400">실시간 방명록 피드를 가져오는 중...</p>
+                </div>
+                <!-- 댓글 내용이 여기에 주입됨 -->
+            </div>
+        </div>
+    </section>
+
     <!-- 여행 정보 꿀팁 섹션 (카드 투명화 및 테두리 정렬) -->
     <section id="tips" class="py-12 sm:py-20 max-w-5xl mx-auto px-4 w-full relative z-10">
         <div class="text-center mb-8 sm:mb-12">
@@ -508,8 +558,8 @@
 
     <!-- 우측 하단 플로팅 컨트롤러 -->
     <div class="fixed bottom-6 right-6 z-40 flex flex-col gap-2.5">
-        <a href="#selector" onclick="switchSelectorTab('ai')" class="w-12 h-12 rounded-full bg-blue-600 text-white flex items-center justify-center shadow-lg active:scale-90 transition-all border border-blue-500 shadow-blue-500/20" aria-label="AI 컨시어지 바로가기">
-            <span class="text-lg">🤖</span>
+        <a href="#guestbook" class="w-12 h-12 rounded-full bg-blue-600 text-white flex items-center justify-center shadow-lg active:scale-90 transition-all border border-blue-500 shadow-blue-500/20" aria-label="실시간 방명록 쓰기">
+            <span class="text-lg">✍️</span>
         </a>
         <button id="back-to-top" onclick="window.scrollTo({top:0, behavior:'smooth'})" class="w-12 h-12 rounded-full bg-slate-900/90 dark:bg-slate-850/90 text-white flex items-center justify-center shadow-lg active:scale-90 transition-all border border-slate-800 dark:border-slate-700 opacity-0 pointer-events-none duration-300" aria-label="맨위로 이동">
             <i class="fa-solid fa-arrow-up text-lg"></i>
@@ -525,39 +575,304 @@
         </div>
     </footer>
 
-    <!-- 스크립트 영역 -->
-    <script>
+    <!-- 스크립트 영역 (ES Modules & 글로벌 노출) -->
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+        import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { getFirestore, doc, addDoc, onSnapshot, collection, query, deleteDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+
         /* -------------------------------------------------------------
-         * 1. 고선명 인터랙티브 컨스텔레이션(신경망 성운) 엔진
+         * 1. 전역 상태 및 파티클 엔진 설정
          * ------------------------------------------------------------- */
         const canvas = document.getElementById('particle-canvas');
         const ctx = canvas.getContext('2d');
         let particles = [];
         let animationFrameId;
 
-        // 마우스 및 모바일 스마트폰 터치 반응 객체
         let mouse = {
             x: null,
             y: null,
-            radius: 150 // 한층 넓어진 인터랙티브 감지 원 반경
+            radius: 150
         };
 
-        // 캔버스 창 리사이징
+        // 방명록 관련 임시 로컬/세션 고유 사용자 아이디
+        let myGuestUserId = null;
+        let selectedEmoji = "🍲"; // 기본 선택 이모지
+
+        // 퀴즈 결과 DB 정의
+        const quizResults = {
+            'soup-heavy': {
+                emoji: '🍲',
+                name: '더도이 종가집 돼지국밥',
+                desc: '맑고 고소함이 탁월한 육수와 푸짐하게 썰어 넣은 돼지고기가 피로를 완벽하게 날려줍니다. 국밥 애호가들조차 단골로 사로잡은 진국 명당!',
+                link: '#restaurant-dedoi'
+            },
+            'clean-warm': {
+                emoji: '🥣',
+                name: '무봉리토종순대국',
+                desc: '가마솥에서 연신 우려내는 은은하고 전통 깊은 토종 순대국밥의 기품. 갓 무쳐내 입에 아삭거리는 매콤 달큰 겉절이와 완벽한 조화를 보장합니다.',
+                link: '#restaurant-mubong'
+            },
+            'spicy-energy': {
+                emoji: '🔥',
+                name: '춘천명물닭갈비',
+                desc: '풍성한 순살 야채와 매콤달콤한 소스가 만나 입안 가득 감칠맛을 폭발시키는 닭갈비 명가. 치즈 사리와 화룡점정의 무쇠 볶음밥은 필수 코스입니다!',
+                link: '#restaurant-dakgalbi'
+            }
+        };
+
+        /* -------------------------------------------------------------
+         * 2. Firebase & Firestore 연동 (방명록)
+         * ------------------------------------------------------------- */
+        let db = null;
+        let auth = null;
+        let isFirebaseActive = false;
+        
+        // 목업 데이터 (오프라인 모드용)
+        let mockComments = [
+            { id: "mock1", emoji: "🍲", nickname: "김해국밥러", message: "더도이 수백(수육백반) 진짜 부드럽고 든든하네요! 공항 가기 전에 매번 들릅니다.", createdAt: Date.now() - 3600000, userId: "mockUser1" },
+            { id: "mock2", emoji: "🔥", nickname: "닭갈비매니아", message: "춘천명물닭갈비 치즈사리 추가 꼭 하세요! 볶음밥까지 긁어먹었네요 ㅎㅎ", createdAt: Date.now() - 7200000, userId: "mockUser2" },
+            { id: "mock3", emoji: "🥣", nickname: "토종입맛", message: "무봉리는 역시 김치가 하드캐리합니다. 국물 담백하고 속이 아주 편해요.", createdAt: Date.now() - 10800000, userId: "mockUser3" }
+        ];
+
+        const appId = typeof __app_id !== 'undefined' ? __app_id : 'gimhae-taste-app-v1';
+        const rawFirebaseConfig = typeof __firebase_config !== 'undefined' ? __firebase_config : null;
+
+        async function setupFirebase() {
+            if (!rawFirebaseConfig) {
+                console.warn("Firebase config not available. Running in offline mock mode.");
+                initOfflineGuestbook();
+                return;
+            }
+
+            try {
+                const firebaseConfig = JSON.parse(rawFirebaseConfig);
+                const app = initializeApp(firebaseConfig);
+                db = getFirestore(app);
+                auth = getAuth(app);
+                
+                // RULE 3 - Auth Before Queries
+                let user;
+                if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
+                    const userCredential = await signInWithCustomToken(auth, __initial_auth_token);
+                    user = userCredential.user;
+                } else {
+                    const userCredential = await signInAnonymously(auth);
+                    user = userCredential.user;
+                }
+
+                if (user) {
+                    myGuestUserId = user.uid;
+                    isFirebaseActive = true;
+                    initOnlineGuestbook();
+                } else {
+                    initOfflineGuestbook();
+                }
+            } catch (err) {
+                console.error("Firebase initialization failed:", err);
+                initOfflineGuestbook();
+            }
+        }
+
+        // 온라인 Firestore 실시간 연결 (RULE 1, 2 만족)
+        function initOnlineGuestbook() {
+            // RULE 1 - Strict Paths: public data
+            const commentsCollection = collection(db, 'artifacts', appId, 'public', 'data', 'comments');
+            // RULE 2 - No Complex Queries: fetch all, sort in memory
+            const q = query(commentsCollection);
+
+            onSnapshot(q, (snapshot) => {
+                const comments = [];
+                snapshot.forEach((doc) => {
+                    comments.push({ id: doc.id, ...doc.data() });
+                });
+                
+                // 메모리상에서 내림차순 정렬 (최신 댓글이 맨 위로)
+                comments.sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0));
+                
+                renderComments(comments);
+            }, (error) => {
+                console.error("Firestore onSnapshot error:", error);
+                initOfflineGuestbook(); // 에러 발생 시 로컬 목업으로 전환하여 정지 방지
+            });
+        }
+
+        // 오프라인 기동 시 (목업 모드)
+        function initOfflineGuestbook() {
+            myGuestUserId = "localOfflineUser";
+            renderComments(mockComments);
+        }
+
+        // 실시간 댓글 렌더링 함수
+        function renderComments(commentsList) {
+            const container = document.getElementById('comment-list');
+            const loadingIndicator = document.getElementById('comment-loading');
+            if (loadingIndicator) loadingIndicator.classList.add('hidden');
+
+            if (commentsList.length === 0) {
+                container.innerHTML = `
+                    <div class="text-center py-10 text-slate-400 dark:text-slate-500 text-sm">
+                        <i class="fa-regular fa-comment-dots text-4xl mb-2 text-slate-300"></i>
+                        <p class="font-bold">첫 번째로 방명록 메시지를 남겨보세요!</p>
+                    </div>
+                `;
+                return;
+            }
+
+            container.innerHTML = commentsList.map(item => {
+                const isMyComment = item.userId === myGuestUserId;
+                const formattedTime = formatTimeDiff(item.createdAt);
+                
+                return `
+                    <div class="flex items-start gap-3 bg-white/50 dark:bg-slate-900/40 backdrop-blur-md p-3.5 sm:p-4 rounded-2xl border border-white/40 dark:border-white/5 hover:border-blue-500/20 transition-all duration-300 group">
+                        <div class="text-3xl bg-white/80 dark:bg-slate-800 p-2 rounded-xl shadow-inner select-none flex-shrink-0">
+                            ${escapeHtml(item.emoji || "🍲")}
+                        </div>
+                        <div class="flex-1 space-y-1 min-w-0">
+                            <div class="flex items-center justify-between">
+                                <div class="flex items-center gap-2">
+                                    <span class="font-black text-slate-800 dark:text-slate-200 text-sm">${escapeHtml(item.nickname || "익명미식가")}</span>
+                                    ${isMyComment ? `<span class="bg-blue-100 text-blue-700 dark:bg-blue-950/40 dark:text-blue-300 text-[9px] font-black px-1.5 py-0.5 rounded-full border border-blue-500/10">내 글</span>` : ''}
+                                </div>
+                                <div class="flex items-center gap-2.5">
+                                    <span class="text-[10px] text-slate-400 dark:text-slate-500 font-bold">${formattedTime}</span>
+                                    ${isMyComment ? `
+                                        <button onclick="deleteComment('${item.id}')" class="text-slate-400 hover:text-red-500 transition-colors py-0.5 px-1.5 rounded-md hover:bg-red-50 dark:hover:bg-red-950/20 text-xs" title="삭제하기">
+                                            <i class="fa-regular fa-trash-can"></i>
+                                        </button>
+                                    ` : ''}
+                                </div>
+                            </div>
+                            <p class="text-slate-700 dark:text-slate-300 text-xs sm:text-sm leading-relaxed font-semibold break-words">${escapeHtml(item.message)}</p>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        // 댓글 등록 처리
+        async function submitComment() {
+            const nicknameInput = document.getElementById('guest-nickname');
+            const messageInput = document.getElementById('guest-message');
+            
+            const nickname = nicknameInput.value.trim() || "익명미식가";
+            const message = messageInput.value.trim();
+
+            if (!message) {
+                showToast("⚠️ 한 줄 메시지를 입력해 주세요!");
+                return;
+            }
+
+            const newComment = {
+                emoji: selectedEmoji,
+                nickname: nickname,
+                message: message,
+                createdAt: Date.now(),
+                userId: myGuestUserId
+            };
+
+            const submitBtn = document.getElementById('comment-submit-btn');
+            submitBtn.disabled = true;
+            submitBtn.innerHTML = `<i class="fa-solid fa-spinner animate-spin"></i>`;
+
+            try {
+                if (isFirebaseActive && db) {
+                    const commentsCollection = collection(db, 'artifacts', appId, 'public', 'data', 'comments');
+                    await addDoc(commentsCollection, newComment);
+                } else {
+                    // 오프라인 Mock 데이터 추가
+                    newComment.id = "mock_" + Date.now();
+                    mockComments.unshift(newComment);
+                    renderComments(mockComments);
+                }
+
+                messageInput.value = "";
+                showToast("🎉 맛있는 맛집 토크가 실시간으로 공유되었습니다!");
+            } catch (err) {
+                console.error("댓글 등록 실패:", err);
+                showToast("⚠️ 댓글 저장 중 실패했습니다.");
+            } finally {
+                submitBtn.disabled = false;
+                submitBtn.innerHTML = `<span>작성하기</span> <i class="fa-solid fa-pen-nib"></i>`;
+            }
+        }
+
+        // 댓글 삭제 처리
+        async function deleteComment(id) {
+            if (isFirebaseActive && db) {
+                try {
+                    const commentDoc = doc(db, 'artifacts', appId, 'public', 'data', 'comments', id);
+                    await deleteDoc(commentDoc);
+                    showToast("🗑️ 작성하신 한줄평이 안전하게 삭제되었습니다.");
+                } catch (err) {
+                    console.error("댓글 삭제 오류:", err);
+                    showToast("⚠️ 삭제 권한이 없거나 오류가 발생했습니다.");
+                }
+            } else {
+                // 오프라인 Mock 데이터 삭제
+                mockComments = mockComments.filter(item => item.id !== id);
+                renderComments(mockComments);
+                showToast("🗑️ 모의 방명록이 임시 삭제되었습니다.");
+            }
+        }
+
+        // 이모지 선택 가시성 교체
+        function selectCommentEmoji(emoji) {
+            selectedEmoji = emoji;
+            const buttons = document.querySelectorAll('#emoji-picker button');
+            buttons.forEach(btn => {
+                if (btn.innerText === emoji) {
+                    btn.className = "emoji-btn text-2xl p-1 bg-white/80 dark:bg-slate-800 rounded-xl border-2 border-blue-500 active:scale-90 transition-all";
+                } else {
+                    btn.className = "emoji-btn text-2xl p-1 bg-transparent rounded-xl border-2 border-transparent active:scale-90 transition-all";
+                }
+            });
+        }
+
+        // 시간차 텍스트 계산 도우미
+        function formatTimeDiff(timestamp) {
+            if (!timestamp) return "방금 전";
+            const diff = Date.now() - timestamp;
+            const seconds = Math.floor(diff / 1000);
+            const minutes = Math.floor(seconds / 60);
+            const hours = Math.floor(minutes / 60);
+            const days = Math.floor(hours / 24);
+
+            if (seconds < 60) return "방금 전";
+            if (minutes < 60) return `${minutes}분 전`;
+            if (hours < 24) return `${hours}시간 전`;
+            return `${days}일 전`;
+        }
+
+        // XSS 유해 스크립트 해독기
+        function escapeHtml(str) {
+            if (!str) return '';
+            return str
+                .replace(/&/g, "&amp;")
+                .replace(/</g, "&lt;")
+                .replace(/>/g, "&gt;")
+                .replace(/"/g, "&quot;")
+                .replace(/'/g, "&#039;");
+        }
+
+
+        /* -------------------------------------------------------------
+         * 3. 고선명 인터랙티브 컨스텔레이션(신경망 성운) 엔진
+         * ------------------------------------------------------------- */
         function resizeCanvas() {
             canvas.width = window.innerWidth;
             canvas.height = window.innerHeight;
             initParticles();
         }
 
-        // 고시인성 파티클 클래스
         class Particle {
             constructor() {
                 this.x = Math.random() * canvas.width;
                 this.y = Math.random() * canvas.height;
-                this.size = Math.random() * 4 + 2; // 확실히 눈에 띄도록 크기를 2px ~ 6px로 상향
-                this.speedX = (Math.random() - 0.5) * 1.0; // 속도감 있게 흘러가도록 상향
+                this.size = Math.random() * 4 + 2; 
+                this.speedX = (Math.random() - 0.5) * 1.0; 
                 this.speedY = (Math.random() - 0.5) * 1.0;
-                this.alpha = Math.random() * 0.55 + 0.35; // 최소 선명도 0.35 확보
+                this.alpha = Math.random() * 0.55 + 0.35; 
                 this.baseAlpha = this.alpha;
             }
 
@@ -565,13 +880,11 @@
                 this.x += this.speedX;
                 this.y += this.speedY;
 
-                // 벽 충돌 제어 (반대쪽 유영)
                 if (this.x < 0) this.x = canvas.width;
                 if (this.x > canvas.width) this.x = 0;
                 if (this.y < 0) this.y = canvas.height;
                 if (this.y > canvas.height) this.y = 0;
 
-                // 마우스/터치 근처 통과 시 부드럽고 묵직한 이탈 상호작용
                 if (mouse.x !== null && mouse.y !== null) {
                     let dx = mouse.x - this.x;
                     let dy = mouse.y - this.y;
@@ -596,10 +909,8 @@
             draw() {
                 const isDark = document.documentElement.classList.contains('dark');
                 if (isDark) {
-                    // 다크모드: 민트-싸이언 홀로그램 성단 컬러
                     ctx.fillStyle = `rgba(165, 243, 252, ${this.alpha})`;
                 } else {
-                    // 라이트모드: 로얄블루 빛깔
                     ctx.fillStyle = `rgba(37, 99, 235, ${this.alpha * 0.8})`;
                 }
                 ctx.beginPath();
@@ -608,34 +919,29 @@
             }
         }
 
-        // 파티클 군 생성 (밀도 보정)
         function initParticles() {
             particles = [];
-            // 시인성 확보를 위해 개수 대폭 조정 (모바일 최소 50개, 데스크톱 최대 120개)
             const count = Math.min(Math.floor((canvas.width * canvas.height) / 12000), 120);
             for (let i = 0; i < count; i++) {
                 particles.push(new Particle());
             }
         }
 
-        // 애니메이션 루프 (별빛 연결 그물망 그리기 병합)
         function animateParticles() {
             ctx.clearRect(0, 0, canvas.width, canvas.height);
             const isDark = document.documentElement.classList.contains('dark');
             
-            // 1차 업데이트 및 그리기
             for (let i = 0; i < particles.length; i++) {
                 particles[i].update();
                 particles[i].draw();
                 
-                // 2차 그물망 알고리즘 (파티클간 거리가 가까우면 확실하게 연결선 그리기)
                 for (let j = i + 1; j < particles.length; j++) {
                     let dx = particles[i].x - particles[j].x;
                     let dy = particles[i].y - particles[j].y;
                     let dist = Math.sqrt(dx * dx + dy * dy);
                     
-                    if (dist < 110) { // 연결 한계 거리
-                        let lineAlpha = (110 - dist) / 110 * 0.45; // 거리에 비례한 뚜렷한 투명도
+                    if (dist < 110) { 
+                        let lineAlpha = (110 - dist) / 110 * 0.45; 
                         ctx.lineWidth = 1.2;
                         if (isDark) {
                             ctx.strokeStyle = `rgba(165, 243, 252, ${lineAlpha})`;
@@ -649,7 +955,6 @@
                     }
                 }
                 
-                // 마우스/터치 포인트와의 다이렉트 연결 선 연결 (티가 확실하게 나는 특급 장치!)
                 if (mouse.x !== null && mouse.y !== null) {
                     let mDx = particles[i].x - mouse.x;
                     let mDy = particles[i].y - mouse.y;
@@ -672,7 +977,6 @@
             animationFrameId = requestAnimationFrame(animateParticles);
         }
 
-        // 데스크톱 마우스 이벤트 리스너
         window.addEventListener('mousemove', (e) => {
             mouse.x = e.clientX;
             mouse.y = e.clientY;
@@ -683,7 +987,6 @@
             mouse.y = null;
         });
 
-        // 스마트폰 모바일 터치 이벤트 리스너 (터치 순간 즉각 연결망 반응 유도)
         window.addEventListener('touchmove', (e) => {
             if (e.touches.length > 0) {
                 mouse.x = e.touches[0].clientX;
@@ -700,7 +1003,7 @@
 
 
         /* -------------------------------------------------------------
-         * 2. 다크/라이트모드 & 글로벌 유틸 스크립트
+         * 4. 다크/라이트모드 & 글로벌 유틸 스크립트
          * ------------------------------------------------------------- */
         function initTheme() {
             const savedTheme = localStorage.getItem('theme');
@@ -736,7 +1039,6 @@
             }
         }
 
-        // 모바일 네비게이션 서브 메뉴 제어
         function toggleMobileMenu() {
             const menu = document.getElementById('mobile-menu');
             const icon = document.getElementById('menu-icon');
@@ -759,7 +1061,6 @@
             icon.classList.add('fa-bars');
         }
 
-        // 백투탑 스크롤 제어
         window.addEventListener('scroll', () => {
             const btn = document.getElementById('back-to-top');
             if (window.scrollY > 300) {
@@ -786,7 +1087,6 @@
             }, 2200);
         }
 
-        // 주소 한 손 간편 복사
         function copyToClipboard(text) {
             const textarea = document.createElement('textarea');
             textarea.value = text;
@@ -797,7 +1097,6 @@
             showToast("📋 주소가 성공적으로 복사되었습니다. 지도 앱에 붙여넣으세요!");
         }
 
-        // 탭 전환 핸들링
         function switchSelectorTab(tab) {
             const tabAi = document.getElementById('tab-ai');
             const tabQuiz = document.getElementById('tab-quiz');
@@ -822,7 +1121,6 @@
             sendQueryToAI();
         }
 
-        // 실시간 AI 질의응답 시뮬레이터
         function sendQueryToAI() {
             const input = document.getElementById('ai-query-input');
             const query = input.value.trim();
@@ -904,28 +1202,6 @@
             }, 1200);
         }
 
-        // 퀴즈 결과 DB
-        const quizResults = {
-            'soup-heavy': {
-                emoji: '🍲',
-                name: '더도이 종가집 돼지국밥',
-                desc: '맑고 고소함이 탁월한 육수와 푸짐하게 썰어 넣은 돼지고기가 피로를 완벽하게 날려줍니다. 국밥 애호가들조차 단골로 사로잡은 진국 명당!',
-                link: '#restaurant-dedoi'
-            },
-            'clean-warm': {
-                emoji: '🥣',
-                name: '무봉리토종순대국',
-                desc: '가마솥에서 연신 우려내는 은은하고 전통 깊은 토종 순대국밥의 기품. 갓 무쳐내 입에 아삭거리는 매콤 달큰 겉절이와 완벽한 조화를 보장합니다.',
-                link: '#restaurant-mubong'
-            },
-            'spicy-energy': {
-                emoji: '🔥',
-                name: '춘천명물닭갈비',
-                desc: '풍성한 순살 야채와 매콤달콤한 소스가 만나 입안 가득 감칠맛을 폭발시키는 닭갈비 명가. 치즈 사리와 화룡점정의 무쇠 볶음밥은 필수 코스입니다!',
-                link: '#restaurant-dakgalbi'
-            }
-        };
-
         function selectQuizOption(optionKey) {
             const result = quizResults[optionKey];
             const qContainer = document.getElementById('quiz-question-container');
@@ -955,11 +1231,26 @@
             qContainer.classList.remove('hidden');
         }
 
+        // HTML 인라인 온클릭과 ES Module간의 호환성을 위해 window 객체에 이벤트 매핑 등록
+        window.toggleTheme = toggleTheme;
+        window.toggleMobileMenu = toggleMobileMenu;
+        window.closeMobileMenu = closeMobileMenu;
+        window.copyToClipboard = copyToClipboard;
+        window.switchSelectorTab = switchSelectorTab;
+        window.fillAIQuery = fillAIQuery;
+        window.sendQueryToAI = sendQueryToAI;
+        window.selectQuizOption = selectQuizOption;
+        window.resetQuiz = resetQuiz;
+        window.selectCommentEmoji = selectCommentEmoji;
+        window.submitComment = submitComment;
+        window.deleteComment = deleteComment;
+
         // 로드 시 전체 이니셜라이징 진행
         window.onload = function() {
             initTheme();
             resizeCanvas();
             animateParticles();
+            setupFirebase();
         }
     </script>
 </body>
